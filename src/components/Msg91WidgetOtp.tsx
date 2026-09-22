@@ -66,14 +66,21 @@ function loadWidgetScript(): Promise<void> {
       // initSendOTP is MSG91's own init function, defined by the script that just loaded -- calling it
       // with our config (exposeMethods: true) is what actually creates window.sendOtp/retryOtp/verifyOtp.
       // It is not a "script has loaded" callback MSG91 invokes on its own; we have to call it ourselves.
-      (window as unknown as { initSendOTP: (config: Record<string, unknown>) => void }).initSendOTP({
-        widgetId: WIDGET_ID,
-        tokenAuth: WIDGET_TOKEN,
-        exposeMethods: true,
-        success: () => {},
-        failure: () => {},
-      });
-      resolve();
+      // This runs in the script's load event, not the Promise executor's own call stack, so a throw here
+      // would otherwise become an unhandled exception that leaves the promise pending forever instead of
+      // rejecting it -- hence the explicit try/catch.
+      try {
+        (window as unknown as { initSendOTP: (config: Record<string, unknown>) => void }).initSendOTP({
+          widgetId: WIDGET_ID,
+          tokenAuth: WIDGET_TOKEN,
+          exposeMethods: true,
+          success: () => {},
+          failure: () => {},
+        });
+        resolve();
+      } catch (e) {
+        reject(e instanceof Error ? e : new Error("initSendOTP failed."));
+      }
     };
     el.onerror = () => reject(new Error("Could not load the verification widget."));
     document.head.appendChild(el);
