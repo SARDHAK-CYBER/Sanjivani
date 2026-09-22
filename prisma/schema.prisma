@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// The connection URL lives in prisma.config.ts (Prisma 7); the runtime client
+// connects through the @prisma/adapter-pg driver adapter (see src/lib/prisma.ts).
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String  @id @default(uuid())
+  email        String  @unique // always stored lower-cased
+  passwordHash String?
+  role         String  @default("STUDENT") // ADMIN, STAFF, STUDENT, SECURITY
+
+  // PII & Identity
+  uii         String? @unique // Unique Identity Information code
+  fullName    String?
+  rruIdNumber String? @unique
+
+  // Encrypted at rest with AES-256-GCM (src/lib/encryption.ts)
+  dob              String?
+  bloodGroup       String?
+  allergies        String?
+  contactNumber    String? // E.164, doubles as the 2FA phone factor
+  emergencyContact String?
+  guardianRelation String?
+  guardianName     String?
+  guardianContact  String?
+  currentAddress   String?
+
+  // Media (served through /api/files, never from /public)
+  profilePhotoUrl String?
+  idCardPhotoUrl  String?
+
+  // Auth / recovery
+  resetToken       String?   @unique // SHA-256 of the emailed token, never the token itself
+  resetTokenExpiry DateTime?
+  tokenVersion     Int       @default(0) // bump to revoke every session issued earlier
+
+  // Two-factor authentication (authenticator app / TOTP, RFC 6238)
+  totpSecretEnc   String? // encrypted base32 secret; set only once enrolment is confirmed
+  totpPendingEnc  String? // secret shown during enrolment, not yet confirmed with a code
+  totpEnabledAt   DateTime?
+  totpLastStep    Int? // last accepted 30 s time step; a code can never be used twice
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedIncidents Incident[] @relation("AssignedIncidents")
+  assets            Asset[]
+  auditLogs         AuditLog[]
+  recoveryCodes     RecoveryCode[]
+
+  @@index([role, createdAt])
+}
+
+// One-time codes that let a member in when their authenticator app is unavailable. Stored only as keyed hashes.
+model RecoveryCode {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, codeHash])
+}
+
+model AuditLog {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action            String // e.g. "PROFILE_UPDATED"
+  deviceFingerprint String? // User-Agent or a short context string
+  geoId             String? // client IP (resolved via src/lib/ip.ts)
+  createdAt         DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@index([action, createdAt])
+}
+
+model Asset {
+  id            String @id @default(uuid())
+  userId        String
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetType     String // VEHICLE, LAPTOP, MOBILE
+  identifier    String // licence plate / serial number
+  qrReferenceId String @unique @default(uuid())
+
+  frontPhotoUrl  String?
+  backPhotoUrl   String?
+  leftPhotoUrl   String?
+  rightPhotoUrl  String?
+  rcPhotoUrl     String?
+  devicePhotoUrl String?
+
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  incidents Incident[]
+  scanLogs  AssetScanRateLimit[]
+
+  @@index([userId])
+}
+
+model Bystander {
+  id                 String   @id @default(uuid())
+  mobileNumber       String // encrypted (E.164)
+  mobileNumberHash   String   @unique // HMAC blind index of the E.164 number, for lookups
+  verified           Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  incidents          Incident[]
+  captureTokens      CaptureToken[]
+}
+
+model Incident {
+  id                String    @id @default(uuid())
+  assetId           String
+  asset             Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  bystanderId       String
+  bystander         Bystander @relation(fields: [bystanderId], references: [id], onDelete: Cascade)
+  assignedUserId    String?
+  assignedUser      User?     @relation("AssignedIncidents", fields: [assignedUserId], references: [id])
+  selfieUrl         String?
+  scenePhotoUrl     String?
+  scenePhotoUrl2    String?
+  scenePhotoUrl3    String?
+  scenePhotoUrl4    String?
+  latitude          Float?
+  longitude         Float?
+  deviceFingerprint String? // stringified JSON, server-built
+  ipAddress         String?
+  status            String    @default("NEW") // NEW, IN_PROGRESS, RESOLVED, BLOCKED, FLAGGED
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([assetId])
+  @@index([bystanderId])
+  @@index([status, createdAt])
+}
+
+// Single-use, short-lived token proving a bystander is allowed to file ONE report.
+model CaptureToken {
+  id          String    @id @default(uuid())
+  token       String    @unique
+  bystanderId String
+  bystander   Bystander @relation(fields: [bystanderId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([expiresAt])
+}
+
+// One phone-verification attempt: a code is sent to a number, checked, and (once verified) traded for a
+// single-use proof token. Only a keyed hash of the code is stored, and the number itself is encrypted.
+model PhoneOtp {
+  id          String    @id @default(uuid())
+  purpose     String // login | register | bystander | change-phone
+  phoneEnc    String // encrypted E.164 number
+  userId      String? // account the challenge belongs to (login, change-phone)
+  codeHash    String // HMAC of the current code, bound to this challenge id
+  channel     String // whatsapp | sms: channel of the most recent send
+  attempts    Int       @default(0) // wrong guesses so far, kept across resends
+  sendCount   Int       @default(1)
+  expiresAt   DateTime
+  lastSentAt  DateTime  @default(now())
+  consumedAt  DateTime? // the code was entered correctly
+  proofUsedAt DateTime? // the proof token has been spent
+  createdAt   DateTime  @default(now())
+
+  @@index([expiresAt])
+}
+
+// Fixed-window counters used when Upstash is not configured (see src/lib/rate-limit.ts).
+model RateLimit {
+  key       String   @id
+  count     Int      @default(0)
+  resetTime DateTime
+
+  @@index([resetTime])
+}
+
+model AssetScanRateLimit {
+  id        String   @id @default(uuid())
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  ipAddress String
+  scannedAt DateTime @default(now())
+
+  @@index([assetId, scannedAt])
+}
