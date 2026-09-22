@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Camera, MapPin, AlertCircle, PhoneCall, HeartPulse, ShieldAlert, RefreshCw, Activity, Loader2 } from "lucide-react";
-import { Msg91WidgetOtp } from "@/components/Msg91WidgetOtp";
+import { PhoneOtp } from "@/components/PhoneOtp";
 import type { ReleasedEmergencyInfo } from "@/lib/types";
 
 function NativeCamera({ onCapture, label, facingMode = "environment", capturedUrl, onRetake }: { onCapture: (file: File) => void, label: string, facingMode?: string, capturedUrl: string | null, onRetake: () => void }) {
@@ -232,7 +232,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
           {step === "verify" && (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">Verify your mobile number so the owner&apos;s emergency details can be shared with you, and so security can reach you.</p>
-              <Msg91WidgetOtp purpose="bystander" sendLabel="Send code" verifyLabel="Verify identity" onVerified={handlePhoneVerified} />
+              <PhoneOtp purpose="bystander" sendLabel="Send code" verifyLabel="Verify identity" onVerified={handlePhoneVerified} />
             </div>
           )}
 

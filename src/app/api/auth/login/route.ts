@@ -72,12 +72,9 @@ async function verifyPassword(request: Request, body: Record<string, unknown>) {
     tempToken: await signPendingTwoFactorToken(user),
     method: isTotpEnabled(user) ? "totp" : "enroll",
     canRecoverByPhone: user.role !== "ADMIN",
-    // Masked, for on-screen display only.
+    // Masked, for on-screen display only. The real number is never sent to the browser -- /api/phone/send
+    // looks it up itself from tempToken and sends the code server-side.
     phoneHint: maskPhone(phone),
-    // Full number: the MSG91 widget needs a real identifier to call sendOtp() with. It's sent to the
-    // browser but never rendered -- see src/components/Msg91WidgetOtp.tsx. This is a real change from
-    // the previous design, which never revealed the number before the phone step completed.
-    phone,
   });
 }
 

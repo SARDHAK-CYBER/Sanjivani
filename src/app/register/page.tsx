@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ShieldAlert, Loader2, CheckCircle2, Lock, Camera } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Msg91WidgetOtp } from "@/components/Msg91WidgetOtp";
+import { PhoneOtp } from "@/components/PhoneOtp";
 import { validatePassword } from "@/lib/password";
 import { parseE164 } from "@/lib/phone";
 
@@ -308,7 +308,7 @@ export default function RegisterPage() {
                 Creating your secure profile...
               </div>
             ) : (
-              <Msg91WidgetOtp
+              <PhoneOtp
                 purpose="register"
                 initialPhone={parseE164(contactNumber) ?? contactNumber}
                 lockPhone

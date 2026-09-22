@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { ShieldAlert, Loader2, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Msg91WidgetOtp } from "@/components/Msg91WidgetOtp";
+import { PhoneOtp } from "@/components/PhoneOtp";
 import { TotpSetup } from "@/components/TotpSetup";
 import { RecoveryCodes } from "@/components/RecoveryCodes";
 
@@ -33,7 +33,6 @@ export default function LoginPage() {
 
   const [tempToken, setTempToken] = useState(""); // proves the password step passed; only good for the second step
   const [phoneHint, setPhoneHint] = useState("");
-  const [loginPhone, setLoginPhone] = useState(""); // real number, used only to call the widget -- never displayed
   const [canRecoverByPhone, setCanRecoverByPhone] = useState(false);
   const [recoveryFlow, setRecoveryFlow] = useState(false); // true when replacing a lost authenticator
   const [otpKey, setOtpKey] = useState(0); // bumping this resets the phone-code widget after a server-side rejection
@@ -79,7 +78,6 @@ export default function LoginPage() {
       if (res.ok && data.requires2FA) {
         setTempToken(data.tempToken);
         setPhoneHint(data.phoneHint);
-        setLoginPhone(data.phone);
         setCanRecoverByPhone(Boolean(data.canRecoverByPhone));
         setRecoveryFlow(false);
         // Accounts without an authenticator yet must first prove their phone, then set one up.
@@ -216,12 +214,10 @@ export default function LoginPage() {
                   ? "To replace your authenticator, confirm it is you with a code sent to your registered number. This signs out your other sessions and cancels your old recovery codes."
                   : "To keep your account safe, first confirm your registered number. Then you will set up an authenticator app, which you will use every time you sign in."}
               </p>
-              <Msg91WidgetOtp
+              <PhoneOtp
                 key={otpKey}
                 purpose="login"
-                loginPhone={loginPhone}
                 tempToken={tempToken}
-                maskedPhone={phoneHint}
                 hint={`We will send a code to your registered mobile number (${phoneHint}).`}
                 sendLabel="Send code"
                 verifyLabel="Continue"

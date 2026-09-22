@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, AlertCircle, Loader2, Save, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { Msg91WidgetOtp } from "@/components/Msg91WidgetOtp";
+import { PhoneOtp } from "@/components/PhoneOtp";
 import { TwoFactorCard } from "@/components/TwoFactorCard";
 import { parseE164 } from "@/lib/phone";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -182,7 +182,7 @@ export default function UserDashboard() {
                 </div>
                 {numberChanged && !phoneProof && showVerify && !!parseE164(user?.contactNumber) && (
                   <div className="p-4 rounded-xl border border-yellow-200 dark:border-yellow-900/50 bg-yellow-50 dark:bg-yellow-900/10">
-                    <Msg91WidgetOtp
+                    <PhoneOtp
                       purpose="change-phone"
                       initialPhone={parseE164(user?.contactNumber) ?? ""}
                       lockPhone

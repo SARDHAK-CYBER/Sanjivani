@@ -14,7 +14,8 @@
     "db:generate": "prisma generate",
     "seed:admin": "tsx scripts/seed-admin.ts",
     "gen:secrets": "node scripts/gen-secrets.mjs",
-    "reset-2fa": "tsx scripts/reset-2fa.ts"
+    "reset-2fa": "tsx scripts/reset-2fa.ts",
+    "otp:smoke": "tsx scripts/otp-smoke.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

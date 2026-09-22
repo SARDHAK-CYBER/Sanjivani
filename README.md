@@ -13,7 +13,7 @@ security watches everything from a command-and-control (C2) dashboard.
 | App | Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind CSS 4 |
 | Database | PostgreSQL (e.g. Neon) via Prisma 7 and the `@prisma/adapter-pg` driver adapter |
 | Member / admin sign-in | Password + **authenticator app (TOTP, RFC 6238)** + one-time recovery codes |
-| Phone verification | **MSG91 OTP Widget**: MSG91 sends and checks the code itself (WhatsApp/SMS/voice/email, its own captcha); our server confirms the resulting token before trusting it |
+| Phone verification | We generate/hash/check the 6-digit code ourselves; MSG91 is used only as an SMS/WhatsApp delivery pipe |
 | Bot protection | Cloudflare Turnstile (optional, free) on the public "send code" step |
 | Sessions | Signed JWTs (`jose`, HS256) in an HttpOnly cookie; separate audience per token type |
 | Crypto | AES-256-GCM field encryption, scrypt password hashing, HMAC blind indexes / code hashes (Node `crypto`) |
@@ -25,7 +25,7 @@ security watches everything from a command-and-control (C2) dashboard.
 ```
 1. email + password            ──▶ password ok (no session yet)
 2a. account has an authenticator ──▶ 6-digit app code (or a recovery code)        ──▶ signed in
-2b. first sign-in (no app yet)   ──▶ code sent to the account's phone (MSG91 widget)
+2b. first sign-in (no app yet)   ──▶ code sent to the account's phone (SMS/WhatsApp via MSG91)
                                      ──▶ scan a QR code, type the first app code
                                      ──▶ save 8 recovery codes                     ──▶ signed in
 ```
@@ -39,37 +39,33 @@ security watches everything from a command-and-control (C2) dashboard.
 * Recovery codes are stored only as keyed hashes; each works once. Members can create a fresh set from their dashboard (needs a current app code).
 * Resetting a password by email does **not** bypass two-factor.
 
-### Phone codes (MSG91 OTP Widget)
+### Phone codes
 
 Phone codes prove a number at **registration**, on a **bystander scan**, when a member **changes their number**, and to
-**authorise authenticator setup or recovery**. MSG91's OTP Widget (`src/components/Msg91WidgetOtp.tsx`) does the sending
-and code-checking itself, behind its own captcha, and hands the browser a JWT as proof:
+**authorise authenticator setup or recovery**. We generate the code ourselves, hash and store it, and use MSG91 purely as
+an SMS/WhatsApp delivery pipe — MSG91 never decides whether a code is correct, we do:
 
 ```
-browser  ──window.sendOtp(number)──▶  MSG91 (sends the code; channel/captcha are the widget's own dashboard settings)
-browser  ──window.verifyOtp(code)──▶  MSG91 (checks the code; returns a JWT "access-token" on success)
-browser  ──/api/phone/verify───────▶  server: asks MSG91 to confirm that token (src/lib/msg91-widget.ts),
+browser  ──/api/phone/send─────────▶  server: generates a 6-digit code, hashes+stores it (src/lib/otp/service.ts),
+                                       hands it to MSG91 to deliver over SMS/WhatsApp (src/lib/otp/transport.ts)
+browser  ──/api/phone/verify───────▶  server: checks the code against the stored hash, capped attempts,
                                        then issues our own single-use signed `proof` (10 min)
 browser  ──next call + proof───────▶  register / bystander / change-phone / enrol: proof must match purpose, number, account
 ```
 
-**Known open issue, being tracked with MSG91 support:** their `verifyAccessToken` endpoint has consistently rejected every
-token we've tested (fresh or not, `localhost` or a real public domain) with a generic `AuthenticationFailure`. The widget's
-own client-side flow (send/receive/enter code) works reliably; it's specifically the server-side confirmation step that
-doesn't yet behave as documented. Until that's resolved, `/api/phone/verify` will reject real attempts even though the
-user successfully completed the widget flow. `src/lib/msg91-widget.ts` has the full detail and is written defensively so
-it starts working the moment MSG91 clarifies the real response shape, with no code changes expected — see its docstring
-before touching it.
-
-We deliberately did **not** build this by generating/hashing/checking our own codes and using MSG91 only as an SMS/WhatsApp
-pipe (the original design) — that approach worked reliably in testing but was set aside in favour of the widget. If the
-`verifyAccessToken` issue can't be resolved, that original design is the fallback; it's preserved (not deleted) and can be
-found via the scratchpad backups made when it was retired.
+**Design history:** an earlier iteration of this used MSG91's client-side OTP Widget instead (MSG91 sending, checking and
+handing back a JWT for our server to confirm via their `verifyAccessToken` endpoint). That endpoint was tested extensively
+— including a full live production deployment, real phone, real domain — and consistently rejected valid tokens with a
+generic `AuthenticationFailure`, even though the widget's own send/verify flow worked correctly. That approach was
+abandoned in favour of the self-hosted design above, which was proven reliable in testing and needs nothing from MSG91
+beyond plain message delivery. The widget code is preserved (not deleted) in the scratchpad backups made when it was retired,
+in case MSG91 ever resolves that endpoint and revisiting it becomes worthwhile.
 
 ## Getting started
 
-Requirements: Node.js 20.19+, a PostgreSQL database, an MSG91 account with an OTP Widget configured, an SMTP server for
-password-reset emails. There are no simulated modes: codes are really sent and emails are really delivered.
+Requirements: Node.js 20.19+, a PostgreSQL database, an MSG91 account with an Authkey (plus an SMS Flow/template and/or a
+WhatsApp Authentication template), an SMTP server for password-reset emails. There are no simulated modes: codes are
+really sent and emails are really delivered.
 
 ```bash
 npm install                 # also runs `prisma generate`
@@ -91,17 +87,14 @@ can sign in with password + app code **without waiting for WhatsApp/SMS to be ap
 
 ### MSG91 setup
 
-1. Create an [MSG91](https://msg91.com) account. Under **Widgets**, create an OTP Widget (or use an existing one) and open its
-   **Client Side Integration** tab for the values below.
-2. Set the four widget env vars: `NEXT_PUBLIC_MSG91_WIDGET_ID` and `NEXT_PUBLIC_MSG91_WIDGET_TOKEN` (not secret — meant to sit
-   in browser code) from that tab, plus your account's **Authkey** into `MSG91_AUTH_KEY` (secret — server-side only, from
-   Settings → Authkey).
-3. In the widget's dashboard settings, choose which channels it offers (SMS/WhatsApp/voice/email) and its OTP length; SMS
-   there uses MSG91's own default template (works immediately, no DLT registration needed to get started) or your own
-   DLT-approved one once you have it.
-4. Test the full flow with your own phone by opening the app's register or scan page — there's no separate smoke-test
-   script for the widget (it's a captcha-gated browser flow, not something scriptable from the CLI).
-5. Read the **known open issue** above before relying on this in production: server-side confirmation isn't working yet.
+1. Create an [MSG91](https://msg91.com) account and copy your **Authkey** (Settings → Authkey) into `MSG91_AUTH_KEY`.
+2. **SMS:** create a Flow/template with a variable for the code (DLT registration required for production use in India;
+   MSG91's docs cover this). Set `MSG91_SMS_TEMPLATE_ID` (and `MSG91_SMS_OTP_VARIABLE` if your variable isn't named `OTP`).
+3. **WhatsApp (optional):** get a WhatsApp Business "Authentication" template approved, then set
+   `MSG91_WHATSAPP_INTEGRATED_NUMBER`, `MSG91_WHATSAPP_TEMPLATE_NAME`, `MSG91_WHATSAPP_NAMESPACE`.
+4. At least one of the two must be configured; both may be, and callers can ask for a specific channel (falls back to
+   whichever is available).
+5. Verify delivery with your own phone before relying on it anywhere else: `npm run otp:smoke -- +919876543210`.
 
 ### Testing scanning from a phone
 
@@ -120,6 +113,7 @@ the dev server, set `NEXT_PUBLIC_QR_BASE_URL=http://<your-LAN-IP>:3000` and `ALL
 | `npm run seed:admin` | Create the first ADMIN with an authenticator already set up |
 | `npm run reset-2fa -- user@rru.edu` | Remove a user's authenticator; for an ADMIN, provision a new one and print it |
 | `npm run gen:secrets` | Print fresh secrets (never writes files) |
+| `npm run otp:smoke -- +919876543210` | Send a real, throw-away code to your own phone over every configured channel |
 
 ## Security model (summary)
 
@@ -127,8 +121,9 @@ the dev server, set `NEXT_PUBLIC_QR_BASE_URL=http://<your-LAN-IP>:3000` and `ALL
   cannot act as a session, an enrolment token or a phone proof cannot act as anything else, and bystander tokens use a different key.
 * **Two-factor:** RFC 6238 TOTP (SHA-1, 6 digits, 30 s, ±1 step), secrets AES-GCM-encrypted at rest, each time step usable once,
   guess limits per account, recovery codes hashed. Setup and recovery require a phone code (except the operator scripts).
-* **Phone codes:** sent and checked by MSG91's OTP Widget; our server independently confirms the resulting token (`src/lib/msg91-widget.ts`,
-  currently blocked — see the known issue above) before issuing a single-use proof bound to purpose, number and account.
+* **Phone codes:** generated, hashed and checked entirely by us (`src/lib/otp/service.ts`); MSG91 only delivers the message.
+  Guess limits per challenge, resend cooldown, a per-number/per-account/per-IP send limit and a daily circuit breaker all
+  apply before a single-use proof is issued, bound to purpose, number and account.
 * **Authorization:** every admin route calls `requireAdmin()` (`src/lib/auth-guard.ts`), which re-reads the role from the
   database on each request; `src/proxy.ts` is only a first gate. Demoting a user, resetting a password or replacing an authenticator takes effect immediately (`tokenVersion`).
 * **PII:** sensitive columns are AES-256-GCM encrypted; searchable values (bystander phone) use an HMAC blind index. API responses are whitelisted, never raw rows.
@@ -143,26 +138,26 @@ the dev server, set `NEXT_PUBLIC_QR_BASE_URL=http://<your-LAN-IP>:3000` and `ALL
 * **File storage is local disk** (`./storage/uploads`, override with `STORAGE_DIR`). That does not persist on serverless hosts such as
   Vercel. Deploy on a host with a persistent volume, or reimplement the functions in `src/lib/storage.ts` on Google Cloud Storage / S3.
   The rest of the app only uses that module.
-* **MSG91 is a single provider**, and its server-side confirmation step is currently not working (see above) — routine member/admin sign-in is
-  unaffected (it uses the authenticator app), but new registrations, bystander scans and authenticator setup/recovery are blocked until that's
-  resolved or the code-generation fallback is restored.
+* **MSG91 is a single provider**, used only for message delivery (see "Design history" above for why). If it's ever
+  unreachable, sends fail closed with a clear error rather than silently pretending to succeed.
 * Back up `ENCRYPTION_KEY`. Without it, encrypted fields (including authenticator secrets) cannot be recovered.
 * Rotate any credentials that were ever kept in an older `.env` (for example the previous Twilio account).
 
 ## Project layout
 
 ```
-prisma/                 schema + migrations
-scripts/                seed-admin.ts, reset-2fa.ts, gen-secrets.mjs
-src/proxy.ts            coarse admin gate (Next 16 "proxy")
-src/lib/totp.ts         RFC 6238 TOTP
-src/lib/two-factor.ts   authenticator enrolment, code checks, recovery codes
-src/lib/msg91-widget.ts server-side verifyAccessToken caller (see the known open issue above)
-src/lib/otp/config.ts   what's left of the retired code-generation flow: purpose type, country allowlist
-src/lib/                auth-guard, tokens, session, phone-verification, encryption, rate-limit, storage, profile, ...
-src/components/         Msg91WidgetOtp, TotpSetup, RecoveryCodes, TwoFactorCard, theme
-src/app/api/            route handlers (auth/, phone/verify, user/2fa, ...)
-src/app/                pages: login, register, dashboard, scan/[id], admin/*
+prisma/                  schema + migrations
+scripts/                 seed-admin.ts, reset-2fa.ts, gen-secrets.mjs, otp-smoke.ts
+src/proxy.ts             coarse admin gate (Next 16 "proxy")
+src/lib/totp.ts          RFC 6238 TOTP
+src/lib/two-factor.ts    authenticator enrolment, code checks, recovery codes
+src/lib/otp/config.ts    MSG91 config, channel selection, purpose type, country allowlist
+src/lib/otp/service.ts   code generation, hashing, send/check challenge lifecycle
+src/lib/otp/transport.ts MSG91 SMS (Flow) / WhatsApp delivery
+src/lib/                 auth-guard, tokens, session, phone-verification, encryption, rate-limit, storage, profile, ...
+src/components/          PhoneOtp, TotpSetup, RecoveryCodes, TwoFactorCard, theme
+src/app/api/             route handlers (auth/, phone/send, phone/verify, user/2fa, ...)
+src/app/                 pages: login, register, dashboard, scan/[id], admin/*
 tests/, src/lib/*.test.ts
-docs/archive/           superseded design notes
+docs/archive/            superseded design notes
 ```
