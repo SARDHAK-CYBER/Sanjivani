@@ -58,11 +58,23 @@ declare global {
 let widgetScript: Promise<void> | null = null;
 function loadWidgetScript(): Promise<void> {
   widgetScript ??= new Promise<void>((resolve, reject) => {
-    if (window.sendOtp) return resolve(); // already loaded by an earlier instance
-    (window as unknown as { initSendOTP?: () => void }).initSendOTP = () => resolve();
+    if (window.sendOtp) return resolve(); // already initialised by an earlier instance
     const el = document.createElement("script");
     el.src = "https://verify.msg91.com/otp-provider.js";
     el.async = true;
+    el.onload = () => {
+      // initSendOTP is MSG91's own init function, defined by the script that just loaded -- calling it
+      // with our config (exposeMethods: true) is what actually creates window.sendOtp/retryOtp/verifyOtp.
+      // It is not a "script has loaded" callback MSG91 invokes on its own; we have to call it ourselves.
+      (window as unknown as { initSendOTP: (config: Record<string, unknown>) => void }).initSendOTP({
+        widgetId: WIDGET_ID,
+        tokenAuth: WIDGET_TOKEN,
+        exposeMethods: true,
+        success: () => {},
+        failure: () => {},
+      });
+      resolve();
+    };
     el.onerror = () => reject(new Error("Could not load the verification widget."));
     document.head.appendChild(el);
   });
