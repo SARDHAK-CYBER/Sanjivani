@@ -80,7 +80,11 @@ export async function POST(request: Request) {
         error.reason === "unconfigured"
           ? "Phone verification is not available right now. Please contact support."
           : "Phone verification failed. Please try again.",
-        status
+        status,
+        // TEMPORARY (pre-launch live debugging only): server logs weren't surfacing which of the three
+        // rejection paths fired, so exposing the real reason here directly -- remove before real users
+        // ever hit this route, since it leaks internal detail about the verification check.
+        { debug: { reason: error.reason, detail: error.message } }
       );
     }
     console.error("OTP verify error:", error);
