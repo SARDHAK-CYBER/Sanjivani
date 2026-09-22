@@ -92,6 +92,10 @@ async function callVerifyAccessToken(accessToken: string): Promise<VerifyResult>
  */
 export async function verifyWidgetAccessToken(accessToken: unknown, claimedPhone: string): Promise<{ phone: string }> {
   if (typeof accessToken !== "string" || accessToken.length < 20 || accessToken.length > 4000) {
+    console.error(
+      "MSG91 access token failed the shape check:",
+      typeof accessToken === "string" ? `length ${accessToken.length}` : typeof accessToken
+    );
     throw new Msg91WidgetError("rejected", "Missing or malformed access token.");
   }
 
@@ -104,6 +108,10 @@ export async function verifyWidgetAccessToken(accessToken: unknown, claimedPhone
   const confirmedPhone = extractPhone(result.raw);
   if (confirmedPhone && confirmedPhone.replace(/\D/g, "") !== claimedPhone.replace(/\D/g, "")) {
     // MSG91's own response disagrees with what the client claimed -- always distrust the client here.
+    console.error(
+      "MSG91 verifyAccessToken succeeded but the phone did not match:",
+      JSON.stringify({ confirmedPhone, claimedPhone, raw: result.raw }).slice(0, 300)
+    );
     throw new Msg91WidgetError("rejected", "Verified phone does not match the number submitted.");
   }
   return { phone: confirmedPhone ?? claimedPhone };
