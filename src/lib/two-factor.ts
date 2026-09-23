@@ -5,7 +5,7 @@ import { generateTotpSecret, otpauthUri, verifyTotp } from "@/lib/totp";
 
 /**
  * Authenticator-app two-factor authentication for accounts: enrolment, code checking with replay
- * protection, and one-time recovery codes. (Phone codes sent through MSG91 are used to *prove the phone*
+ * protection, and one-time recovery codes. (Phone codes sent through Fast2SMS are used to *prove the phone*
  * at registration/scans and to authorise enrolment or recovery; see src/lib/otp.)
  */
 

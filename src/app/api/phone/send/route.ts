@@ -7,11 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { verifyPendingTwoFactorToken } from "@/lib/tokens";
 import { verifyCaptcha } from "@/lib/turnstile";
-import { OTP_PURPOSES, OtpConfigError, isAllowedNumber, phoneLimitKey, resolveChannel, type OtpPurpose } from "@/lib/otp/config";
+import { OTP_PURPOSES, OtpConfigError, isAllowedNumber, phoneLimitKey, type OtpPurpose } from "@/lib/otp/config";
 import { OtpError, sendOtp } from "@/lib/otp/service";
 
 /**
- * Starts (or continues) a phone verification: sends a one-time code over WhatsApp or SMS.
+ * Starts (or continues) a phone verification: sends a one-time code by SMS (Fast2SMS).
  *
  * Who chooses the number depends on the purpose:
  *   login         the account's own number (never typed, never revealed); needs the password-step tempToken
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       return tooMany("Too many codes were requested for this number. Please try again later.");
     }
 
-    const result = await sendOtp({ purpose, phone, userId, channel: resolveChannel(body.channel), resendChallengeId });
+    const result = await sendOtp({ purpose, phone, userId, resendChallengeId });
     return NextResponse.json({ success: true, ...result, phoneHint: maskPhone(phone) });
   } catch (error) {
     if (error instanceof OtpConfigError) {

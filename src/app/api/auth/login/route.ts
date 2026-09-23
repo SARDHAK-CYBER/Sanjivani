@@ -20,7 +20,7 @@ import { writeAudit } from "@/lib/audit";
  *  2. { tempToken, ... }, one of:
  *       totpCode      6-digit code from the authenticator app              -> session
  *       recoveryCode  one-time recovery code (app unavailable)             -> session
- *       phoneProof    proof from /api/phone/verify (a code sent by MSG91)  -> enrolment token, NOT a session
+ *       phoneProof    proof from /api/phone/verify (a code sent by SMS)    -> enrolment token, NOT a session
  *
  * `method` tells the browser what to ask for: "totp" if the account has an authenticator, "enroll" if it still
  * has to set one up. Setting one up (or replacing a lost one) requires the password AND a code sent to the

@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, MessageCircle, Smartphone } from "lucide-react";
+import { Loader2, Smartphone } from "lucide-react";
 import { parseE164 } from "@/lib/phone";
 
 type Purpose = "login" | "register" | "bystander" | "change-phone";
-type Channel = "whatsapp" | "sms";
 
 type Props = {
   purpose: Purpose;
@@ -25,9 +24,6 @@ type Props = {
 
 const RESEND_FALLBACK_SECONDS = 30;
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-const DEFAULT_CHANNEL: Channel = process.env.NEXT_PUBLIC_OTP_DEFAULT_CHANNEL === "sms" ? "sms" : "whatsapp";
-const OTHER: Record<Channel, Channel> = { whatsapp: "sms", sms: "whatsapp" };
-const LABEL: Record<Channel, string> = { whatsapp: "WhatsApp", sms: "SMS" };
 
 const input =
   "w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600";
@@ -114,7 +110,6 @@ export function PhoneOtp({
   const [phone, setPhone] = useState(initialPhone);
   const [code, setCode] = useState("");
   const [challengeId, setChallengeId] = useState("");
-  const [channel, setChannel] = useState<Channel>(DEFAULT_CHANNEL);
   const [sentTo, setSentTo] = useState(""); // masked number the code went to
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -132,7 +127,7 @@ export function PhoneOtp({
   }, [cooldown]);
 
   const send = useCallback(
-    async (via: Channel, resend: boolean) => {
+    async (resend: boolean) => {
       setError("");
       const e164 = usesTypedNumber ? parseE164(phone) : undefined;
       if (usesTypedNumber && !e164) return setError("Enter a valid mobile number, e.g. +91 98765 43210.");
@@ -145,7 +140,6 @@ export function PhoneOtp({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             purpose,
-            channel: via,
             phone: e164,
             tempToken,
             captchaToken: captchaToken || undefined,
@@ -165,7 +159,6 @@ export function PhoneOtp({
 
         if (e164) setPhone(e164);
         setChallengeId(data.challengeId);
-        setChannel(data.channel);
         setSentTo(data.phoneHint ?? "");
         setCooldown(Number(data.resendAfterSeconds) || RESEND_FALLBACK_SECONDS);
         setCode("");
@@ -206,8 +199,6 @@ export function PhoneOtp({
     }
   }, [code, purpose, challengeId, tempToken, onVerified, usesTypedNumber, phone]);
 
-  const Icon = channel === "whatsapp" ? MessageCircle : Smartphone;
-
   return (
     <div className="space-y-4">
       {error && (
@@ -220,7 +211,7 @@ export function PhoneOtp({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            void send(DEFAULT_CHANNEL, false);
+            void send(false);
           }}
           className="space-y-4"
         >
@@ -250,18 +241,10 @@ export function PhoneOtp({
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
-                {DEFAULT_CHANNEL === "whatsapp" ? <MessageCircle className="w-4 h-4 mr-2" /> : <Smartphone className="w-4 h-4 mr-2" />}
-                {sendLabel} via {LABEL[DEFAULT_CHANNEL]}
+                <Smartphone className="w-4 h-4 mr-2" />
+                {sendLabel}
               </>
             )}
-          </button>
-          <button
-            type="button"
-            disabled={busy || disabled || (captchaActive && !captchaToken)}
-            onClick={() => void send(OTHER[DEFAULT_CHANNEL], false)}
-            className="w-full text-sm text-blue-600 hover:text-blue-700 dark:text-blue-500 font-medium disabled:opacity-50"
-          >
-            Send via {LABEL[OTHER[DEFAULT_CHANNEL]]} instead
           </button>
         </form>
       ) : (
@@ -273,9 +256,9 @@ export function PhoneOtp({
           className="space-y-4"
         >
           <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-            <Icon className="w-4 h-4 mr-2 flex-shrink-0" />
+            <Smartphone className="w-4 h-4 mr-2 flex-shrink-0" />
             <span>
-              We sent a 6-digit code by {LABEL[channel]} to <span className="font-semibold">{sentTo || phone}</span>.
+              We sent a 6-digit code by SMS to <span className="font-semibold">{sentTo || phone}</span>.
             </span>
           </p>
           <div>
@@ -297,24 +280,14 @@ export function PhoneOtp({
             {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : verifyLabel}
           </button>
 
-          <div className="flex items-center justify-between text-sm">
-            <button
-              type="button"
-              onClick={() => void send(channel, true)}
-              disabled={busy || cooldown > 0}
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-500 font-medium disabled:opacity-50"
-            >
-              {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
-            </button>
-            <button
-              type="button"
-              onClick={() => void send(OTHER[channel], true)}
-              disabled={busy || cooldown > 0}
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-500 font-medium disabled:opacity-50"
-            >
-              Send via {LABEL[OTHER[channel]]} instead
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => void send(true)}
+            disabled={busy || cooldown > 0}
+            className="w-full text-sm text-blue-600 hover:text-blue-700 dark:text-blue-500 font-medium disabled:opacity-50"
+          >
+            {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+          </button>
           {usesTypedNumber && !lockPhone && (
             <button
               type="button"

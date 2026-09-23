@@ -1,23 +1,23 @@
-import { msg91Config, type OtpChannel } from "@/lib/otp/config";
+import { fast2smsConfig } from "@/lib/otp/config";
 
 /** A code could not be handed to the delivery provider. The message is for logs, never for users. */
 export class OtpSendError extends Error {}
 
 const TIMEOUT_MS = 8000;
 
-/** MSG91 wants the number as digits with the country code and no "+". */
-export const msg91Number = (e164: string) => e164.replace(/\D/g, "");
+/** Fast2SMS wants a bare 10-digit Indian mobile number, no country code. */
+export const fast2smsNumber = (e164: string) => e164.replace(/\D/g, "").slice(-10);
 
 type HttpResult = { ok: boolean; status: number; body: unknown };
 
-async function postJson(url: string, headers: Record<string, string>, payload: unknown): Promise<HttpResult> {
+async function postForm(url: string, headers: Record<string, string>, params: Record<string, string>): Promise<HttpResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
     const res = await fetch(url, {
       method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json", ...headers },
-      body: JSON.stringify(payload),
+      headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json", ...headers },
+      body: new URLSearchParams(params).toString(),
       signal: controller.signal,
     });
     const text = await res.text();
@@ -29,26 +29,10 @@ async function postJson(url: string, headers: Record<string, string>, payload: u
     }
     return { ok: res.ok, status: res.status, body };
   } catch (error) {
-    throw new OtpSendError(controller.signal.aborted ? "MSG91 request timed out" : `MSG91 request failed: ${(error as Error).message}`);
+    throw new OtpSendError(controller.signal.aborted ? "Fast2SMS request timed out" : `Fast2SMS request failed: ${(error as Error).message}`);
   } finally {
     clearTimeout(timer);
   }
-}
-
-/**
- * MSG91 reports some failures inside an HTTP 200 (`{"type":"error", ...}`), so the status alone is not enough.
- * Sending is deliberately lenient about what counts as success: the code is verified by *us*, so a send
- * that looked like a failure but was delivered costs nothing, while wrongly rejecting a good send would
- * stop every login.
- */
-function accepted(result: HttpResult): boolean {
-  if (!result.ok) return false;
-  const body = result.body as Record<string, unknown> | null;
-  if (body && typeof body === "object") {
-    if (body.type === "error" || body.hasError === true) return false;
-    if (typeof body.status === "string" && ["fail", "failed", "error"].includes(body.status.toLowerCase())) return false;
-  }
-  return true;
 }
 
 function describe(result: HttpResult): string {
@@ -56,52 +40,18 @@ function describe(result: HttpResult): string {
   return `HTTP ${result.status}: ${body.slice(0, 200)}`;
 }
 
-async function sendSms(phone: string, code: string) {
-  const cfg = msg91Config();
-  if (!cfg.smsTemplateId) throw new OtpSendError("MSG91_SMS_TEMPLATE_ID is not set");
-  const result = await postJson(
-    cfg.smsUrl,
-    { authkey: cfg.authKey },
-    {
-      template_id: cfg.smsTemplateId,
-      short_url: "0",
-      recipients: [{ mobiles: msg91Number(phone), [cfg.smsVariable]: code }],
-    }
-  );
-  if (!accepted(result)) throw new OtpSendError(`MSG91 SMS rejected (${describe(result)})`);
-}
+/** Sends the code as a plain SMS via Fast2SMS's Quick SMS route (route=q; no DLT template needed). */
+export async function deliverCode(phone: string, code: string): Promise<void> {
+  const cfg = fast2smsConfig();
+  const number = fast2smsNumber(phone);
+  const message = `Your Sanjivani verification code is ${code}. Do not share this with anyone. It expires in 5 minutes.`;
 
-async function sendWhatsapp(phone: string, code: string) {
-  const cfg = msg91Config();
-  if (!cfg.whatsappNumber || !cfg.whatsappTemplate || !cfg.whatsappNamespace) {
-    throw new OtpSendError("MSG91 WhatsApp variables are not set");
-  }
-  const components: Record<string, unknown> = { body_1: { type: "text", value: code } };
-  if (cfg.whatsappButton) components.button_1 = { subtype: "url", type: "text", value: code };
+  const result = await postForm(cfg.url, { authorization: cfg.apiKey }, { route: "q", message, numbers: number });
 
-  const result = await postJson(
-    cfg.whatsappUrl,
-    { authkey: cfg.authKey },
-    {
-      integrated_number: cfg.whatsappNumber,
-      content_type: "template",
-      payload: {
-        messaging_product: "whatsapp",
-        type: "template",
-        template: {
-          name: cfg.whatsappTemplate,
-          language: { code: cfg.whatsappLanguage, policy: "deterministic" },
-          namespace: cfg.whatsappNamespace,
-          to_and_components: [{ to: [msg91Number(phone)], components }],
-        },
-      },
-    }
-  );
-  if (!accepted(result)) throw new OtpSendError(`MSG91 WhatsApp rejected (${describe(result)})`);
-}
-
-/** Hands one code to the delivery provider over one channel. Throws OtpSendError on failure. */
-export async function deliverCode(channel: OtpChannel, phone: string, code: string): Promise<void> {
-  if (channel === "whatsapp") return sendWhatsapp(phone, code);
-  return sendSms(phone, code);
+  // Fast2SMS returns HTTP 200 with {"return": true, ...} on success, or a non-2xx / {"return": false, ...}
+  // (and sometimes just {"status_code": N, "message": "..."}) on failure -- never a bare "queued" ambiguity
+  // like some providers, but still checked defensively rather than trusting the status code alone.
+  const body = result.body as Record<string, unknown> | null;
+  const succeeded = result.ok && body && typeof body === "object" && body.return === true;
+  if (!succeeded) throw new OtpSendError(`Fast2SMS rejected the send (${describe(result)})`);
 }

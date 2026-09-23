@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { decryptPII, derivedKey, encryptPII } from "@/lib/encryption";
 import { signPhoneProofToken } from "@/lib/tokens";
 import { deliverCode, OtpSendError } from "@/lib/otp/transport";
-import { availableChannels, type OtpChannel, type OtpPurpose } from "@/lib/otp/config";
+import type { OtpPurpose } from "@/lib/otp/config";
 
 export const OTP_LENGTH = 6;
 export const OTP_TTL_MS = 5 * 60_000;
@@ -44,32 +44,18 @@ export function hashCode(challengeId: string, code: string): string {
 
 const safeEqualHex = (a: string, b: string) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
 
+/** Delivery channel is fixed to SMS (Fast2SMS); the column is kept generic in the schema for future channels. */
+const CHANNEL = "sms";
+
 export type SendInput = {
   purpose: OtpPurpose;
   phone: string; // E.164
   userId?: string;
-  channel: OtpChannel;
   /** Continue an existing challenge (send a fresh code) instead of starting a new one. */
   resendChallengeId?: string;
 };
 
-export type SendOutput = { challengeId: string; channel: OtpChannel; resendAfterSeconds: number };
-
-/** Delivers the code, falling back from WhatsApp to SMS if WhatsApp cannot be sent. Returns the channel used. */
-async function deliverWithFallback(channel: OtpChannel, phone: string, code: string): Promise<OtpChannel> {
-  try {
-    await deliverCode(channel, phone, code);
-    return channel;
-  } catch (error) {
-    if (!(error instanceof OtpSendError)) throw error;
-    console.error(`OTP delivery over ${channel} failed:`, error.message);
-    if (channel === "whatsapp" && availableChannels().includes("sms")) {
-      await deliverCode("sms", phone, code); // a failure here propagates as OtpSendError
-      return "sms";
-    }
-    throw error;
-  }
-}
+export type SendOutput = { challengeId: string; resendAfterSeconds: number };
 
 export async function sendOtp(input: SendInput): Promise<SendOutput> {
   const code = generateCode();
@@ -104,7 +90,7 @@ export async function sendOtp(input: SendInput): Promise<SendOutput> {
         sendCount: { lt: MAX_SENDS },
         lastSentAt: { lte: new Date(now.getTime() - resendCooldownSeconds() * 1000) },
       },
-      data: { codeHash: hashCode(row.id, code), sendCount: { increment: 1 }, lastSentAt: now, expiresAt, channel: input.channel },
+      data: { codeHash: hashCode(row.id, code), sendCount: { increment: 1 }, lastSentAt: now, expiresAt },
     });
     if (updated.count === 0) {
       throw new OtpError("cooldown", "Please wait before requesting another code.", { retryAfter: resendCooldownSeconds() });
@@ -118,28 +104,24 @@ export async function sendOtp(input: SendInput): Promise<SendOutput> {
         phoneEnc: encryptPII(input.phone)!,
         userId: input.userId ?? null,
         codeHash: hashCode(challengeId, code),
-        channel: input.channel,
+        channel: CHANNEL,
         expiresAt,
         lastSentAt: now,
       },
     });
   }
 
-  let usedChannel: OtpChannel;
   try {
-    usedChannel = await deliverWithFallback(input.channel, input.phone, code);
+    await deliverCode(input.phone, code);
   } catch (error) {
     if (!input.resendChallengeId) await prisma.phoneOtp.delete({ where: { id: challengeId } }).catch(() => {});
     if (error instanceof OtpSendError) {
-      throw new OtpError("send_failed", "We could not send the code. Please try again, or use the other option.");
+      throw new OtpError("send_failed", "We could not send the code. Please try again.");
     }
     throw error;
   }
 
-  if (usedChannel !== input.channel) {
-    await prisma.phoneOtp.update({ where: { id: challengeId }, data: { channel: usedChannel } }).catch(() => {});
-  }
-  return { challengeId, channel: usedChannel, resendAfterSeconds: resendCooldownSeconds() };
+  return { challengeId, resendAfterSeconds: resendCooldownSeconds() };
 }
 
 export type CheckInput = { challengeId: string; code: unknown; purpose: OtpPurpose; userId?: string };

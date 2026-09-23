@@ -3,24 +3,13 @@ import { afterEach, beforeEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { SignJWT } from "jose";
 import { generateCode, hashCode, OTP_LENGTH } from "../src/lib/otp/service";
-import {
-  OtpConfigError,
-  allowedCountryPrefixes,
-  availableChannels,
-  isAllowedNumber,
-  resolveChannel,
-} from "../src/lib/otp/config";
-import { OtpSendError, deliverCode, msg91Number } from "../src/lib/otp/transport";
+import { OtpConfigError, allowedCountryPrefixes, fast2smsConfig, isAllowedNumber } from "../src/lib/otp/config";
+import { OtpSendError, deliverCode, fast2smsNumber } from "../src/lib/otp/transport";
 import { signPhoneProofToken, verifyPhoneProofToken, verifySessionToken, signSessionToken } from "../src/lib/tokens";
 import { captchaEnabled, verifyCaptcha } from "../src/lib/turnstile";
 
 const env = process.env as Record<string, string | undefined>;
-const ENV_KEYS = [
-  "OTP_DEFAULT_CHANNEL", "OTP_ALLOWED_COUNTRY_CODES",
-  "MSG91_AUTH_KEY", "MSG91_SMS_TEMPLATE_ID", "MSG91_SMS_OTP_VARIABLE", "MSG91_FLOW_URL", "MSG91_WHATSAPP_URL",
-  "MSG91_WHATSAPP_INTEGRATED_NUMBER", "MSG91_WHATSAPP_TEMPLATE_NAME", "MSG91_WHATSAPP_NAMESPACE",
-  "MSG91_WHATSAPP_LANGUAGE", "MSG91_WHATSAPP_BUTTON", "TURNSTILE_SECRET_KEY", "TURNSTILE_VERIFY_URL",
-];
+const ENV_KEYS = ["OTP_ALLOWED_COUNTRY_CODES", "FAST2SMS_API_KEY", "FAST2SMS_URL", "TURNSTILE_SECRET_KEY", "TURNSTILE_VERIFY_URL"];
 const realFetch = globalThis.fetch;
 const saved: Record<string, string | undefined> = {};
 
@@ -29,7 +18,7 @@ beforeEach(() => {
     saved[k] = env[k];
     delete env[k];
   }
-  env.MSG91_AUTH_KEY = "test-authkey";
+  env.FAST2SMS_API_KEY = "test-api-key";
 });
 afterEach(() => {
   for (const k of ENV_KEYS) {
@@ -39,19 +28,11 @@ afterEach(() => {
   globalThis.fetch = realFetch;
 });
 
-const configureSms = () => (env.MSG91_SMS_TEMPLATE_ID = "tmpl-sms");
-const configureWhatsapp = () => {
-  env.MSG91_WHATSAPP_INTEGRATED_NUMBER = "919000000000";
-  env.MSG91_WHATSAPP_TEMPLATE_NAME = "otp_auth";
-  env.MSG91_WHATSAPP_NAMESPACE = "ns-123";
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- request bodies are inspected loosely in assertions
-type Call = { url: string; init: RequestInit; body: any };
+type Call = { url: string; init: RequestInit; params: URLSearchParams };
 function mockFetch(respond: (call: Call) => { status?: number; body: unknown } | Promise<never>): Call[] {
   const calls: Call[] = [];
   globalThis.fetch = (async (url: string | URL, init: RequestInit = {}) => {
-    const call: Call = { url: String(url), init, body: typeof init.body === "string" && init.body.startsWith("{") ? JSON.parse(init.body) : init.body };
+    const call: Call = { url: String(url), init, params: new URLSearchParams(String(init.body ?? "")) };
     calls.push(call);
     const r = await respond(call);
     const text = typeof r.body === "string" ? r.body : JSON.stringify(r.body);
@@ -83,7 +64,7 @@ describe("code generation and hashing", () => {
   });
 });
 
-describe("configuration and channels", () => {
+describe("configuration", () => {
   it("defaults to India only", () => {
     assert.deepEqual(allowedCountryPrefixes(), ["+91"]);
     assert.ok(isAllowedNumber("+919876543210"));
@@ -97,148 +78,75 @@ describe("configuration and channels", () => {
     assert.ok(isAllowedNumber("+447911123456"));
   });
 
-  it("only offers channels that are configured", () => {
-    assert.deepEqual(availableChannels(), []);
-    configureSms();
-    assert.deepEqual(availableChannels(), ["sms"]);
-    configureWhatsapp();
-    assert.deepEqual(availableChannels(), ["whatsapp", "sms"]);
-  });
-
-  it("resolves a request to the best available channel", () => {
-    configureSms();
-    assert.equal(resolveChannel("whatsapp"), "sms", "WhatsApp asked for but not configured -> SMS");
-    configureWhatsapp();
-    assert.equal(resolveChannel("sms"), "sms");
-    assert.equal(resolveChannel("whatsapp"), "whatsapp");
-    assert.equal(resolveChannel(undefined), "whatsapp", "default is WhatsApp");
-    assert.equal(resolveChannel("carrier-pigeon"), "whatsapp", "junk falls back to the default");
-    env.OTP_DEFAULT_CHANNEL = "sms";
-    assert.equal(resolveChannel(undefined), "sms");
-  });
-
-  it("fails clearly when nothing is configured or the key is missing", () => {
-    assert.throws(() => resolveChannel("sms"), OtpConfigError);
-    delete env.MSG91_AUTH_KEY;
-    assert.throws(() => availableChannels(), OtpConfigError);
+  it("fails clearly when the API key is missing", () => {
+    delete env.FAST2SMS_API_KEY;
+    assert.throws(() => fast2smsConfig(), OtpConfigError);
   });
 });
 
-describe("MSG91 transport: requests", () => {
-  it("formats the number the way MSG91 expects (digits, country code, no plus)", () => {
-    assert.equal(msg91Number("+919876543210"), "919876543210");
+describe("Fast2SMS transport: requests", () => {
+  it("formats the number as bare 10 digits (no country code)", () => {
+    assert.equal(fast2smsNumber("+919876543210"), "9876543210");
   });
 
-  it("sends SMS through the Flow API with the authkey header and template variables", async () => {
-    configureSms();
-    const calls = mockFetch(() => ({ body: { type: "success", message: "req-1" } }));
-    await deliverCode("sms", "+919876543210", "048291");
+  it("sends the Quick SMS route with the authorization header and form body", async () => {
+    const calls = mockFetch(() => ({ body: { return: true, request_id: "abc", message: ["SMS sent successfully."] } }));
+    await deliverCode("+919876543210", "048291");
 
     assert.equal(calls.length, 1);
-    assert.equal(calls[0].url, "https://control.msg91.com/api/v5/flow");
+    assert.equal(calls[0].url, "https://www.fast2sms.com/dev/bulkV2");
     assert.equal(calls[0].init.method, "POST");
     const headers = calls[0].init.headers as Record<string, string>;
-    assert.equal(headers.authkey, "test-authkey");
-    assert.equal(headers["content-type"], "application/json");
-    assert.deepEqual(calls[0].body, {
-      template_id: "tmpl-sms",
-      short_url: "0",
-      recipients: [{ mobiles: "919876543210", OTP: "048291" }],
-    });
+    assert.equal(headers.authorization, "test-api-key");
+    assert.equal(headers["content-type"], "application/x-www-form-urlencoded");
+    assert.equal(calls[0].params.get("route"), "q");
+    assert.equal(calls[0].params.get("numbers"), "9876543210");
+    assert.ok(calls[0].params.get("message")?.includes("048291"));
   });
 
-  it("uses a custom template variable name and endpoint override", async () => {
-    configureSms();
-    env.MSG91_SMS_OTP_VARIABLE = "var1";
-    env.MSG91_FLOW_URL = "http://127.0.0.1:9100/flow";
-    const calls = mockFetch(() => ({ body: { type: "success" } }));
-    await deliverCode("sms", "+919876543210", "111111");
-    assert.equal(calls[0].url, "http://127.0.0.1:9100/flow");
-    assert.deepEqual(calls[0].body.recipients, [{ mobiles: "919876543210", var1: "111111" }]);
-  });
-
-  it("sends WhatsApp authentication templates in MSG91's documented bulk payload", async () => {
-    configureWhatsapp();
-    const calls = mockFetch(() => ({ body: { status: "success" } }));
-    await deliverCode("whatsapp", "+919876543210", "654321");
-
-    assert.equal(calls[0].url, "https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/");
-    assert.equal((calls[0].init.headers as Record<string, string>).authkey, "test-authkey");
-    assert.deepEqual(calls[0].body, {
-      integrated_number: "919000000000",
-      content_type: "template",
-      payload: {
-        messaging_product: "whatsapp",
-        type: "template",
-        template: {
-          name: "otp_auth",
-          language: { code: "en", policy: "deterministic" },
-          namespace: "ns-123",
-          to_and_components: [
-            {
-              to: ["919876543210"],
-              components: {
-                body_1: { type: "text", value: "654321" },
-                button_1: { subtype: "url", type: "text", value: "654321" },
-              },
-            },
-          ],
-        },
-      },
-    });
-  });
-
-  it("can omit the copy-code button and change the language", async () => {
-    configureWhatsapp();
-    env.MSG91_WHATSAPP_BUTTON = "false";
-    env.MSG91_WHATSAPP_LANGUAGE = "en_US";
-    const calls = mockFetch(() => ({ body: {} }));
-    await deliverCode("whatsapp", "+919876543210", "222222");
-    const tpl = calls[0].body.payload.template;
-    assert.equal(tpl.language.code, "en_US");
-    assert.deepEqual(Object.keys(tpl.to_and_components[0].components), ["body_1"]);
+  it("honours a URL override", async () => {
+    env.FAST2SMS_URL = "http://127.0.0.1:9100/bulkV2";
+    const calls = mockFetch(() => ({ body: { return: true } }));
+    await deliverCode("+919876543210", "111111");
+    assert.equal(calls[0].url, "http://127.0.0.1:9100/bulkV2");
   });
 });
 
-describe("MSG91 transport: failures", () => {
+describe("Fast2SMS transport: failures", () => {
   const cases: [string, { status?: number; body: unknown }][] = [
     ["HTTP 500", { status: 500, body: { message: "boom" } }],
-    ["HTTP 401 (bad authkey)", { status: 401, body: { type: "error", message: "Authentication failure" } }],
-    ["HTTP 200 carrying type=error", { body: { type: "error", message: "Template not found" } }],
-    ["HTTP 200 carrying hasError", { body: { hasError: true } }],
-    ["HTTP 200 carrying status=fail", { body: { status: "fail" } }],
+    ["HTTP 401 (bad key)", { status: 401, body: { status_code: 412, message: "Invalid Authentication" } }],
+    ["HTTP 200 with return: false", { body: { return: false, status_code: 995, message: "Spamming detected" } }],
+    ["HTTP 200 needing wallet top-up", { body: { status_code: 999, message: "You need to complete one transaction of 100 INR or more before using API route." } }],
+    ["HTTP 200 with no recognisable success field", { body: "queued" }],
   ];
   for (const [name, response] of cases) {
     it(`rejects: ${name}`, async () => {
-      configureSms();
       mockFetch(() => response);
-      await assert.rejects(deliverCode("sms", "+919876543210", "123456"), OtpSendError);
+      await assert.rejects(deliverCode("+919876543210", "123456"), OtpSendError);
     });
   }
 
   it("treats a network failure as a send failure", async () => {
-    configureSms();
     globalThis.fetch = (async () => {
       throw new TypeError("fetch failed");
     }) as typeof fetch;
-    await assert.rejects(deliverCode("sms", "+919876543210", "123456"), OtpSendError);
+    await assert.rejects(deliverCode("+919876543210", "123456"), OtpSendError);
   });
 
-  it("accepts an unlabelled 200 (sending is lenient; verification is not)", async () => {
-    configureSms();
-    mockFetch(() => ({ body: "queued" }));
-    await deliverCode("sms", "+919876543210", "123456");
+  it("only accepts an explicit return: true", async () => {
+    mockFetch(() => ({ body: { return: true, request_id: "x" } }));
+    await deliverCode("+919876543210", "123456"); // does not throw
   });
 
-  it("fails cleanly when the channel is not configured", async () => {
-    await assert.rejects(deliverCode("sms", "+919876543210", "123456"), OtpSendError);
-    await assert.rejects(deliverCode("whatsapp", "+919876543210", "123456"), OtpSendError);
+  it("fails cleanly when the API key is not configured", async () => {
+    delete env.FAST2SMS_API_KEY;
+    await assert.rejects(deliverCode("+919876543210", "123456"), OtpConfigError);
   });
 
-  it("never leaks the authkey in an error message", async () => {
-    configureSms();
+  it("never leaks the API key in an error message", async () => {
     mockFetch(() => ({ status: 500, body: "internal" }));
-    await assert.rejects(deliverCode("sms", "+919876543210", "123456"), (e: Error) => !e.message.includes("test-authkey"));
+    await assert.rejects(deliverCode("+919876543210", "123456"), (e: Error) => !e.message.includes("test-api-key"));
   });
 });
 
@@ -292,12 +200,13 @@ describe("Turnstile", () => {
 
   it("when configured, requires a valid token and asks Cloudflare", async () => {
     env.TURNSTILE_SECRET_KEY = "secret";
-    const calls = mockFetch((c) => ({ body: { success: String(c.body).includes("response=good") } }));
+    const calls = mockFetch((c) => ({ body: { success: c.params.get("response") === "good" } }));
     assert.equal(captchaEnabled(), true);
     assert.equal(await verifyCaptcha("good", "1.2.3.4"), true);
     assert.equal(await verifyCaptcha("bad", "1.2.3.4"), false);
     assert.equal(calls[0].url, "https://challenges.cloudflare.com/turnstile/v0/siteverify");
-    assert.ok(String(calls[0].body).includes("secret=secret") && String(calls[0].body).includes("remoteip=1.2.3.4"));
+    assert.equal(calls[0].params.get("secret"), "secret");
+    assert.equal(calls[0].params.get("remoteip"), "1.2.3.4");
   });
 
   it("fails closed on missing/oversized tokens and on network errors", async () => {
