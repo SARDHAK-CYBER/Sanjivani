@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
     const asset = await prisma.asset.findUnique({
       where: { qrReferenceId },
-      select: { id: true, userId: true, user: { select: { bloodGroup: true } } },
+      select: { id: true, userId: true, user: { select: { bloodGroup: true, fullName: true } } },
     });
     if (!asset) return errorJson("Invalid QR Code or User Not Found", 404);
 
@@ -129,8 +129,8 @@ export async function POST(request: Request) {
       success: true,
       incidentId,
       releaseInSeconds: PII_RELEASE_DELAY_SECONDS,
-      // Only the blood group is shown immediately; the rest waits out the review window (see ./[id]/full).
-      memberInfo: { bloodGroup: decryptPIIOrNull(asset.user.bloodGroup) },
+      // Only the blood group and name are shown immediately; the rest waits out the review window (see ./[id]/full).
+      memberInfo: { bloodGroup: decryptPIIOrNull(asset.user.bloodGroup), fullName: asset.user.fullName },
     });
   } catch (error) {
     console.error("Incident Report Error:", error);

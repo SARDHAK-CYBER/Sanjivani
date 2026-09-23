@@ -4,6 +4,13 @@ import { Camera, MapPin, AlertCircle, PhoneCall, HeartPulse, ShieldAlert, Refres
 import { PhoneOtp } from "@/components/PhoneOtp";
 import type { ReleasedEmergencyInfo } from "@/lib/types";
 
+// Fixed campus info, not owner-specific -- shown to every bystander regardless of PII release status.
+// TODO: add campus security / emergency services phone numbers here once provided.
+const CAMPUS_LOCATION = {
+  name: "Rashtriya Raksha University (RRU), Gandhinagar",
+  mapsUrl: "https://maps.app.goo.gl/xrN3usRMGX4yN9PZ9",
+};
+
 function NativeCamera({ onCapture, label, facingMode = "environment", capturedUrl, onRetake }: { onCapture: (file: File) => void, label: string, facingMode?: string, capturedUrl: string | null, onRetake: () => void }) {
   const handleNativeCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -60,6 +67,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
   const [error, setError] = useState("");
 
   const [bloodGroup, setBloodGroup] = useState<string | null>(null);
+  const [ownerName, setOwnerName] = useState<string | null>(null);
   const [fullPii, setFullPii] = useState<ReleasedEmergencyInfo | null>(null);
   const [incidentId, setIncidentId] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(0);
@@ -151,6 +159,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
 
       if (res.ok && data.success) {
         setBloodGroup(data.memberInfo?.bloodGroup ?? null);
+        setOwnerName(data.memberInfo?.fullName ?? null);
         setIncidentId(data.incidentId);
         setSecondsLeft(data.releaseInSeconds ?? 10);
         setStep("result");
@@ -219,6 +228,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
           <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-90" />
           <h2 className="text-xl font-bold">Emergency Response</h2>
           <p className="text-red-100 text-sm opacity-90 mt-1">Sanjivani Asset: {assetInfo.assetType}</p>
+          {step === "result" && ownerName && <p className="text-white font-semibold mt-1">Owner: {ownerName}</p>}
           <a href="tel:112" className="mt-3 inline-flex items-center bg-white text-red-700 font-bold text-sm px-4 py-2 rounded-full">
             <PhoneCall className="w-4 h-4 mr-2" /> Call emergency services (112)
           </a>
@@ -316,6 +326,14 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
                     <span className="text-red-900 font-bold">{fullPii ? (fullPii.allergies || "None") : blocked ? "Withheld" : "Retrieving..."}</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <h3 className="font-bold text-blue-900 mb-2 flex items-center"><MapPin className="w-5 h-5 mr-2 text-blue-600" /> Campus Location</h3>
+                <p className="text-sm text-blue-900 mb-2">{CAMPUS_LOCATION.name}</p>
+                <a href={CAMPUS_LOCATION.mapsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-blue-700 font-bold text-sm underline">
+                  <MapPin className="w-4 h-4 mr-1" /> Open in Google Maps
+                </a>
               </div>
 
               {blocked ? (

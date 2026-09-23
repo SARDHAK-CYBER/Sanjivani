@@ -127,7 +127,7 @@ the dev server, set `NEXT_PUBLIC_QR_BASE_URL=http://<your-LAN-IP>:3000` and `ALL
 * **Authorization:** every admin route calls `requireAdmin()` (`src/lib/auth-guard.ts`), which re-reads the role from the
   database on each request; `src/proxy.ts` is only a first gate. Demoting a user, resetting a password or replacing an authenticator takes effect immediately (`tokenVersion`).
 * **PII:** sensitive columns are AES-256-GCM encrypted; searchable values (bystander phone) use an HMAC blind index. API responses are whitelisted, never raw rows.
-* **Bystander release:** blood group at once; allergies and contacts only after a 10 s review window (admins can block); the **home address is never released**; reports on frequently-scanned assets are flagged and release nothing.
+* **Bystander release:** owner name and blood group at once; allergies and contacts only after a 10 s review window (admins can block); the **home address is never released**; reports on frequently-scanned assets are flagged and release nothing.
 * **Uploads:** JPEG/PNG/WebP only (checked by content, not name), ≤ 5 MB, stored outside `public/`, served through `/api/files` with per-file authorization, and attached to records only via a validated "adopt temp file" step.
 * **Abuse controls:** per-IP and per-account rate limits on login, authenticator codes, registration, uploads, reports, password reset and code sends; client IP is read from `X-Forwarded-For` counting `TRUSTED_PROXY_HOPS` from the right, so forged headers do not help.
 
