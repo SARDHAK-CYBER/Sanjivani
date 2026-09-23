@@ -23,7 +23,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ path
     const file = await readStoredFile(absolutePath);
     if (!file) return new NextResponse("Not Found", { status: 404 });
 
-    return new NextResponse(new Uint8Array(file), {
+    return new NextResponse(Buffer.isBuffer(file) ? new Uint8Array(file) : file, {
       headers: {
         "Content-Type": contentTypeFor(absolutePath),
         "X-Content-Type-Options": "nosniff",

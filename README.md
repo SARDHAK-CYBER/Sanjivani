@@ -135,9 +135,10 @@ the dev server, set `NEXT_PUBLIC_QR_BASE_URL=http://<your-LAN-IP>:3000` and `ALL
 
 * Set `NEXT_PUBLIC_APP_URL` (used in emailed links) and `TRUSTED_PROXY_HOPS` (Vercel/single load balancer: `1`).
 * Configure SMTP: password-reset emails are sent through it and resets do not work without it.
-* **File storage is local disk** (`./storage/uploads`, override with `STORAGE_DIR`). That does not persist on serverless hosts such as
-  Vercel. Deploy on a host with a persistent volume, or reimplement the functions in `src/lib/storage.ts` on Google Cloud Storage / S3.
-  The rest of the app only uses that module.
+* **File storage** uses Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set (create a Blob store under Project → Storage; connecting
+  it to the project adds the token automatically), otherwise local disk (`./storage/uploads`, override with `STORAGE_DIR`) —
+  fine for local dev, but local disk does not persist on serverless hosts such as Vercel, so set up the Blob store before
+  deploying there. The rest of the app only talks to `src/lib/storage.ts`.
 * **Fast2SMS is a single provider**, used only for message delivery (see "Design history" above for why). If it's ever
   unreachable, sends fail closed with a clear error rather than silently pretending to succeed.
 * Back up `ENCRYPTION_KEY`. Without it, encrypted fields (including authenticator secrets) cannot be recovered.
