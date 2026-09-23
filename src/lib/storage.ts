@@ -8,9 +8,14 @@ import { put as blobPut, get as blobGet, del as blobDel, list as blobList, renam
  * enforces who may read what).
  *
  * Two backends, chosen the same way as rate-limit.ts picks Redis vs. Postgres: Vercel Blob when
- * BLOB_READ_WRITE_TOKEN is set (works on serverless hosts, where local disk does not survive between
+ * credentials for it are present (works on serverless hosts, where local disk does not survive between
  * invocations), otherwise the local disk under STORAGE_DIR (no cloud credentials needed for local dev
  * or tests).
+ *
+ * "Credentials present" means either BLOB_READ_WRITE_TOKEN (a store created without connecting it to a
+ * project, or pulled locally with `vercel env pull`) or BLOB_STORE_ID (a store connected to the project
+ * through the dashboard, which uses OIDC instead -- the SDK reads the actual short-lived OIDC token from
+ * VERCEL_OIDC_TOKEN itself, which Vercel injects at runtime and never appears in the env var list).
  *
  * Layout (identical on both backends):  temp/<name>                     freshly uploaded, unclaimed
  *                                        <userId>/<name>                 a member's profile/ID/asset photos
@@ -20,7 +25,7 @@ import { put as blobPut, get as blobGet, del as blobDel, list as blobList, renam
  * adoptTempFile(), which only accepts a URL that this module itself minted for the temp folder.
  */
 
-const useBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+const useBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 
 // The path is chosen at runtime (STORAGE_DIR), so tell Turbopack not to trace the whole project into
 // the server bundle on account of it.
