@@ -135,9 +135,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
 
     setSubmitting(true);
     try {
-      const selfieUrl = await uploadFile(selfie.file);
-      const sceneUrls: string[] = [];
-      for (const scene of scenes) sceneUrls.push(await uploadFile(scene.file));
+      const [selfieUrl, ...sceneUrls] = await Promise.all([selfie.file, ...scenes.map((s) => s.file)].map(uploadFile));
 
       const res = await fetch("/api/incidents", {
         method: "POST",
