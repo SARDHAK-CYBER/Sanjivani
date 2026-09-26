@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Plus, Eye, Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { usePolling } from "@/lib/use-polling";
 
 type User = {
   id: string;
@@ -37,6 +38,15 @@ export default function MembersPage() {
     }, 300);
     return () => clearTimeout(delayDebounceFn);
   }, [search, page]);
+
+  // Keep the directory current (new registrations, edits) without flashing the loading state.
+  usePolling(async () => {
+    const res = await fetch(`/api/members?search=${encodeURIComponent(search)}&page=${page}&limit=10`).catch(() => null);
+    if (!res?.ok) return;
+    const result = await res.json();
+    setMembers(result.data || []);
+    setTotalPages(result.pagination?.totalPages || 1);
+  }, 10000);
 
   return (
     <div className="space-y-6">

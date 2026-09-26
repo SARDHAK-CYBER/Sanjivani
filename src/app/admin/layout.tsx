@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { Users, Car, ShieldAlert, LayoutDashboard, FileText } from "lucide-react";
+import { Users, Car, LayoutDashboard, FileText } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { AdminAlertsProvider, IncidentsNavLink } from "@/components/AdminAlerts";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoutButton } from "@/components/LogoutButton";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
+    <AdminAlertsProvider>
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex transition-colors">
       {/* Sidebar */}
       <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 hidden md:flex flex-col transition-colors">
@@ -31,10 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <FileText className="w-5 h-5 mr-3" />
             Audit Logs
           </Link>
-          <Link href="/admin/incidents" className="flex items-center px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-100 dark:border-red-900/30">
-            <ShieldAlert className="w-5 h-5 mr-3 animate-pulse" />
-            Incidents
-          </Link>
+          <IncidentsNavLink />
         </nav>
 
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
@@ -57,5 +56,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </main>
     </div>
+    </AdminAlertsProvider>
   );
 }

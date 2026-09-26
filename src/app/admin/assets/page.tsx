@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Plus, QrCode, UploadCloud, Loader2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useQrBaseUrl } from "@/lib/use-qr-base-url";
+import { usePolling } from "@/lib/use-polling";
 
 type User = {
   id: string;
@@ -53,6 +54,12 @@ export default function AssetsPage() {
       cancelled = true;
     };
   }, [reloadKey]);
+
+  // Members can now register assets themselves, so pick those up without a manual reload.
+  usePolling(async () => {
+    const res = await fetch("/api/assets").catch(() => null);
+    if (res?.ok) setAssets(await res.json());
+  }, 10000);
 
   // The owner picker searches the directory server-side instead of loading only the first page of members.
   useEffect(() => {

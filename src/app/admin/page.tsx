@@ -1,85 +1,34 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users, Car, AlertTriangle, ExternalLink, MapPin, Smartphone, Network } from "lucide-react";
+import { usePolling } from "@/lib/use-polling";
 import type { AdminIncident } from "@/lib/types";
-
-// A short synthesised tone; no audio file needed (browsers may block it until the page has been clicked).
-function beep() {
-  try {
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new Ctx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.frequency.value = 880;
-    gain.gain.value = 0.15;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.4);
-  } catch {
-    /* audio unavailable */
-  }
-}
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [incidents, setIncidents] = useState<AdminIncident[]>([]);
   const [stats, setStats] = useState({ members: 0, assets: 0, incidents: 0 });
-  const [newIncidents, setNewIncidents] = useState(0);
-  const seenIncidentIds = useRef<Set<string> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        const [incidentsRes, statsRes] = await Promise.all([fetch("/api/admin/incidents"), fetch("/api/admin/stats")]);
-        if (cancelled) return;
-        if (incidentsRes.status === 401 || incidentsRes.status === 403) {
-          router.replace("/login");
-          return;
-        }
-
-        if (incidentsRes.ok) {
-          const data: AdminIncident[] = await incidentsRes.json();
-          setIncidents(data);
-
-          // Compare by id (not by count) so the very first incident, and bursts, are noticed too.
-          if (seenIncidentIds.current) {
-            const fresh = data.filter((inc) => !seenIncidentIds.current!.has(inc.id));
-            if (fresh.length > 0) {
-              setNewIncidents((n) => n + fresh.length);
-              beep();
-            }
-          }
-          seenIncidentIds.current = new Set(data.map((inc) => inc.id));
-        }
-        if (statsRes.ok) setStats(await statsRes.json());
-      } catch {
-        console.error("Failed to fetch dashboard data");
+  const load = useCallback(async () => {
+    try {
+      const [incidentsRes, statsRes] = await Promise.all([fetch("/api/admin/incidents"), fetch("/api/admin/stats")]);
+      if (incidentsRes.status === 401 || incidentsRes.status === 403) {
+        router.replace("/login");
+        return;
       }
+      if (incidentsRes.ok) setIncidents(await incidentsRes.json());
+      if (statsRes.ok) setStats(await statsRes.json());
+    } catch {
+      console.error("Failed to fetch dashboard data");
     }
-
-    void load();
-    const interval = setInterval(load, 5000); // Poll every 5s
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
   }, [router]);
+
+  usePolling(load, 5000);
 
   return (
     <div className="space-y-6 animate-in fade-in transition-colors">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard Overview</h1>
 
-      {newIncidents > 0 && (
-        <div role="alert" className="flex items-center justify-between bg-red-600 text-white px-4 py-3 rounded-lg shadow">
-          <span className="font-bold">EMERGENCY ALERT: {newIncidents} new incident{newIncidents > 1 ? "s" : ""} reported</span>
-          <button onClick={() => setNewIncidents(0)} className="text-sm underline">Dismiss</button>
-        </div>
-      )}
-      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center transition-colors">
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-full mr-4"><Users className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>
