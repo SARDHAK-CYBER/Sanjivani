@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Pencil, Plus, QrCode, Trash2, UploadCloud, X } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { AssetQr } from "@/components/AssetQr";
 import { ASSET_PHOTO_KEYS, ASSET_PHOTO_SLOTS, ASSET_TYPES, type AssetPhotoKey, type AssetType } from "@/lib/constants";
 import { useQrBaseUrl } from "@/lib/use-qr-base-url";
 import type { AssetSummary } from "@/lib/types";
@@ -176,10 +176,7 @@ export function MemberAssets({ initial }: { initial: AssetSummary[] }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {assets.map((asset) => (
             <div key={asset.id} className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center">
-              <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 mb-3">
-                {/* Rendered in the browser: the scan link contains the secret asset ID and must not be sent to a third-party QR service. */}
-                <QRCodeSVG value={`${baseUrl}/scan/${asset.qrReferenceId}`} size={112} level="M" />
-              </div>
+              <AssetQr value={`${baseUrl}/scan/${asset.qrReferenceId}`} assetType={asset.assetType} identifier={asset.identifier} size={112} className="mb-3" />
               <h4 className="font-bold text-gray-900 dark:text-white">{asset.assetType}</h4>
               <p className="text-sm text-gray-700 dark:text-gray-300">{asset.identifier}</p>
               <div className="flex gap-2 mt-2 w-full justify-center flex-wrap">

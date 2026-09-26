@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Plus, QrCode, UploadCloud, Loader2 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { AssetQr } from "@/components/AssetQr";
 import { useQrBaseUrl } from "@/lib/use-qr-base-url";
 import { ASSET_PHOTO_SLOTS, type AssetPhotoKey, type AssetType } from "@/lib/constants";
 import { usePolling } from "@/lib/use-polling";
@@ -187,12 +187,7 @@ export default function AssetsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {assets.map(asset => (
           <div key={asset.id} className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden flex flex-col items-center p-6">
-            <QRCodeSVG 
-              value={`${baseUrl}/scan/${asset.qrReferenceId}`}
-              size={150}
-              level={"H"}
-              className="mb-4 bg-white p-2 rounded border border-gray-200"
-            />
+            <AssetQr value={`${baseUrl}/scan/${asset.qrReferenceId}`} assetType={asset.assetType} identifier={asset.identifier} size={150} className="mb-4" />
             <h3 className="font-bold text-lg text-gray-900 dark:text-white">{asset.identifier}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{asset.assetType}</p>
             <div className="w-full border-t border-gray-100 dark:border-gray-800 pt-3 mt-auto">
