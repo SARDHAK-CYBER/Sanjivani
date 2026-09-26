@@ -138,7 +138,7 @@ the dev server, set `NEXT_PUBLIC_QR_BASE_URL=http://<your-LAN-IP>:3000` and `ALL
 
 ## Deployment notes
 
-* `vercel.json` pins functions to `sin1` (Singapore), next to the Neon database in `ap-southeast-1`; keep the two in the same region or every query pays a long round trip. Vercel builds run `npm run vercel-build`, which applies pending Prisma migrations before building.
+* `vercel.json` pins functions to `sin1` (Singapore), next to the Neon database in `ap-southeast-1`; keep the two in the same region or every query pays a long round trip. Vercel builds do not touch the database: after adding a Prisma migration, run `npm run db:migrate` yourself (with `DATABASE_URL` set) before or right after pushing.
 * Set `NEXT_PUBLIC_APP_URL` (used in emailed links) and `TRUSTED_PROXY_HOPS` (Vercel/single load balancer: `1`).
 * Configure SMTP: password-reset emails are sent through it and resets do not work without it.
 * **File storage** uses Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set (create a Blob store under Project → Storage; connecting
