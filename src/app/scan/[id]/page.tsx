@@ -6,11 +6,16 @@ import { PhoneOtp } from "@/components/PhoneOtp";
 import type { ReleasedEmergencyInfo } from "@/lib/types";
 
 // Fixed campus info, not owner-specific -- shown to every bystander regardless of PII release status.
-// TODO: add campus security / emergency services phone numbers here once provided.
 const CAMPUS_LOCATION = {
   name: "Rashtriya Raksha University (RRU), Gandhinagar",
   mapsUrl: "https://maps.app.goo.gl/xrN3usRMGX4yN9PZ9",
 };
+
+// RRU emergency helpline (the same numbers printed on the QR poster).
+const HELPLINE = [
+  { display: "+91 80531 92892", tel: "+918053192892" },
+  { display: "+91 90146 96834", tel: "+919014696834" },
+];
 
 function NativeCamera({ onCapture, label, facingMode = "environment", capturedUrl, onRetake }: { onCapture: (file: File) => void, label: string, facingMode?: string, capturedUrl: string | null, onRetake: () => void }) {
   const handleNativeCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,6 +237,13 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
           <a href="tel:112" className="mt-3 inline-flex items-center bg-white text-red-700 font-bold text-sm px-4 py-2 rounded-full">
             <PhoneCall className="w-4 h-4 mr-2" /> Call emergency services (112)
           </a>
+          <div className="mt-3 flex flex-col sm:flex-row gap-2 justify-center">
+            {HELPLINE.map((h) => (
+              <a key={h.tel} href={`tel:${h.tel}`} className="inline-flex items-center justify-center bg-red-700/60 hover:bg-red-700 text-white font-semibold text-sm px-4 py-2 rounded-full">
+                <PhoneCall className="w-4 h-4 mr-2" /> RRU helpline {h.display}
+              </a>
+            ))}
+          </div>
         </div>
 
         <div className="p-6 space-y-6">

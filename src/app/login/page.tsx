@@ -234,7 +234,7 @@ export default function LoginPage() {
             <div className="space-y-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {adminSecondFactor
-                  ? "Administrator sign-in needs two more steps: confirm the code sent to your registered number, then enter the code from your authenticator app."
+                  ? "Your password was changed, so confirm the code sent to your registered number first, then enter the code from your authenticator app. You will not be asked for a texted code again until the next password change."
                   : recoveryFlow
                   ? "To replace your authenticator, confirm it is you with a code sent to your registered number. This signs out your other sessions and cancels your old recovery codes."
                   : "To keep your account safe, first confirm your registered number. Then you will set up an authenticator app, which you will use every time you sign in."}
