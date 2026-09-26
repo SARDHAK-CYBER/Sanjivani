@@ -1,10 +1,26 @@
 # Sanjivani: QR-Based Emergency Response System
 
+**Version 1.0** · see [`PRD.md`](PRD.md) for requirements and [`PRD_Report.md`](PRD_Report.md) for the status and verification report.
+
 A QR-code emergency response app for a university campus. Members register their identity and emergency
 details (encrypted at rest) and attach QR codes to their assets (vehicle, laptop, phone). If someone finds
 an asset in an emergency they scan the QR, prove they hold a real phone number, report the incident with
 photos and GPS, and are shown the owner's critical medical information and emergency contacts. Campus
 security watches everything from a command-and-control (C2) dashboard.
+
+## Features
+
+* **Members** register with encrypted identity and emergency details, add and edit their own assets (a mobile needs 2 photos,
+  a laptop 3, vehicles their own set), and download each asset's QR as a print-ready **poster** (RRU template with the QR in
+  the middle, PNG) or a bare SVG.
+* **Bystanders** scan a QR, verify a phone number by SMS, report with a selfie, scene photos and GPS, and immediately see the
+  owner's name and blood group, then (after a 10 s review window) allergies and emergency contacts. The page also shows the
+  campus map link, one-tap emergency helpline buttons and first-aid tips. The home address is never released.
+* **Administrators** get a live C2 dashboard: incident feed and counters that refresh on their own, toast + sound + badge alerts
+  on every admin page, incident triage and blocking, a member directory with deep profiles and CSV export of a member's activity,
+  and audit logs split into security/account and incident events, with encrypted before/after review of every profile or asset edit.
+* **Responsive:** one layout for phones, tablets and desktop (Android, iOS, web): 320 px and up, bottom navigation for admins
+  on phones, tables that become labelled cards, 16 px inputs (no iOS zoom), notch/home-indicator safe areas, dynamic viewport height.
 
 ## Stack
 
@@ -19,6 +35,10 @@ security watches everything from a command-and-control (C2) dashboard.
 | Crypto | AES-256-GCM field encryption, scrypt password hashing, HMAC blind indexes / code hashes (Node `crypto`) |
 | Rate limiting | Upstash Redis if configured, otherwise atomic counters in Postgres |
 | Email | Nodemailer over your SMTP server (password-reset links) |
+| SMS | Fast2SMS Quick SMS route (about INR 5 per message, no DLT template needed) |
+| Files | Vercel Blob (private store) in production, local disk in development |
+| Hosting | Vercel (functions pinned to `sin1`), database on Neon in `ap-southeast-1` |
+| QR / poster | `qrcode.react` (error correction H); the poster is composed in the browser on a canvas over `public/qr-template.jpg` |
 
 ## How sign-in works
 
@@ -113,7 +133,7 @@ the dev server, set `NEXT_PUBLIC_QR_BASE_URL=http://<your-LAN-IP>:3000` and `ALL
 | `npm run dev` / `build` / `start` | Next.js (`build` runs `prisma generate` first) |
 | `npm test` | Unit tests (`node:test` via `tsx`), no database needed. Includes the RFC 4226/6238 TOTP test vectors |
 | `npm run typecheck` / `lint` | `tsc --noEmit` / ESLint |
-| `npm run db:migrate` | `prisma migrate deploy` |
+| `npm run db:migrate` | Apply migrations (`scripts/migrate-deploy.mjs`: direct Neon host instead of the pooler, longer connect timeout, retries) |
 | `npm run seed:admin` | Create the first ADMIN with an authenticator already set up |
 | `npm run reset-2fa -- user@rru.edu` | Remove a user's authenticator; for an ADMIN, provision a new one and print it |
 | `npm run gen:secrets` | Print fresh secrets (never writes files) |
@@ -142,20 +162,25 @@ the dev server, set `NEXT_PUBLIC_QR_BASE_URL=http://<your-LAN-IP>:3000` and `ALL
 * `vercel.json` pins functions to `sin1` (Singapore), next to the Neon database in `ap-southeast-1`; keep the two in the same region or every query pays a long round trip. Vercel builds do not touch the database: after adding a Prisma migration, run `npm run db:migrate` yourself (with `DATABASE_URL` set) before or right after pushing.
 * Set `NEXT_PUBLIC_APP_URL` (used in emailed links) and `TRUSTED_PROXY_HOPS` (Vercel/single load balancer: `1`).
 * Configure SMTP: password-reset emails are sent through it and resets do not work without it.
-* **File storage** uses Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set (create a Blob store under Project → Storage; connecting
-  it to the project adds the token automatically), otherwise local disk (`./storage/uploads`, override with `STORAGE_DIR`) —
-  fine for local dev, but local disk does not persist on serverless hosts such as Vercel, so set up the Blob store before
-  deploying there. The rest of the app only talks to `src/lib/storage.ts`.
+* **File storage** uses Vercel Blob when `BLOB_READ_WRITE_TOKEN` or `BLOB_STORE_ID` (the OIDC-connected store) is present:
+  create a private Blob store under Project → Storage and connect it to the project. Otherwise files go to local disk
+  (`./storage/uploads`, override with `STORAGE_DIR`), which is fine for development but does not persist on serverless hosts.
+  The rest of the app only talks to `src/lib/storage.ts`.
+* **Use the same `ENCRYPTION_KEY`, `JWT_SECRET` and `BYSTANDER_JWT_SECRET` everywhere that shares a database.** A local
+  `.env` with different keys cannot read rows written by production (and vice versa).
+* **Neon free tier and Vercel Hobby** sleep when idle, so the first request after a quiet period is slow. That is
+  infrastructure, not the app.
 * **Fast2SMS is a single provider**, used only for message delivery (see "Design history" above for why). If it's ever
   unreachable, sends fail closed with a clear error rather than silently pretending to succeed.
 * Back up `ENCRYPTION_KEY`. Without it, encrypted fields (including authenticator secrets) cannot be recovered.
-* Rotate any credentials that were ever kept in an older `.env` (for example the previous Twilio or MSG91 accounts).
+* Rotate any credentials that were ever shared or kept in an older `.env` (Fast2SMS key, database password, admin password, admin recovery codes, and the previous Twilio or MSG91 accounts).
 
 ## Project layout
 
 ```
 prisma/                  schema + migrations
-scripts/                 seed-admin.ts, reset-2fa.ts, gen-secrets.mjs, otp-smoke.ts
+public/                  logo.png, qr-template.jpg (poster template)
+scripts/                 seed-admin.ts, reset-2fa.ts, gen-secrets.mjs, migrate-deploy.mjs, otp-smoke.ts
 src/proxy.ts             coarse admin gate (Next 16 "proxy")
 src/lib/totp.ts          RFC 6238 TOTP
 src/lib/two-factor.ts    authenticator enrolment, code checks, recovery codes
@@ -163,7 +188,12 @@ src/lib/otp/config.ts    Fast2SMS config, purpose type, country allowlist
 src/lib/otp/service.ts   code generation, hashing, send/check challenge lifecycle
 src/lib/otp/transport.ts Fast2SMS Quick SMS delivery
 src/lib/                 auth-guard, tokens, session, phone-verification, encryption, rate-limit, storage, profile, ...
-src/components/          PhoneOtp, TotpSetup, RecoveryCodes, TwoFactorCard, theme
+src/lib/admin-phone-check.ts  when an admin's sign-in needs the one-off texted code
+src/lib/audit.ts         audit writes with encrypted before/after
+src/lib/assets.ts        asset limits, photo slots, temp-file adoption
+src/lib/use-polling.ts   visibility-aware polling hook for live pages
+src/components/          PhoneOtp, TotpSetup, RecoveryCodes, TwoFactorCard, MemberAssets, AssetQr (poster/SVG),
+                         AdminAlerts (live alerts), AdminMobileNav, Logo, theme
 src/app/api/             route handlers (auth/, phone/send, phone/verify, user/2fa, ...)
 src/app/                 pages: login, register, dashboard, scan/[id], admin/*
 tests/, src/lib/*.test.ts
