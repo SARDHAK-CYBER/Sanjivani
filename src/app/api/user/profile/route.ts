@@ -74,6 +74,13 @@ export async function PUT(request: Request) {
       }
     }
 
+    // Which fields actually changed -- names only, never values: the audit log is plain text and these are encrypted at rest.
+    const before = serializeProfile(user) as unknown as Record<string, unknown>;
+    const norm = (v: unknown) => (v === null || v === undefined || v === "" ? null : String(v));
+    const changed = Object.entries(fields as Record<string, unknown>)
+      .filter(([key, value]) => norm(value) !== norm(before[key]))
+      .map(([key]) => key);
+
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -83,7 +90,12 @@ export async function PUT(request: Request) {
       },
     });
 
-    await writeAudit(request, user.id, numberChanged ? "CONTACT_NUMBER_CHANGED" : "PROFILE_UPDATED");
+    await writeAudit(
+      request,
+      user.id,
+      numberChanged ? "CONTACT_NUMBER_CHANGED" : "PROFILE_UPDATED",
+      changed.length ? `Changed: ${changed.join(", ")}` : "Saved with no changes"
+    );
 
     const response = NextResponse.json(serializeProfile(updated));
     if (numberChanged) {
