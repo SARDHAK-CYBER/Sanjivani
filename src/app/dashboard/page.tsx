@@ -61,6 +61,7 @@ export default function UserDashboard() {
     }
   };
 
+  const sameNumber = (a?: string | null, b?: string | null) => !!parseE164(a) && parseE164(a) === parseE164(b);
   const numberChanged = !!user && parseE164(user.contactNumber) !== parseE164(savedNumber);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -196,6 +197,7 @@ export default function UserDashboard() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Emergency Contact</label>
                   <input required type="tel" value={user?.emergencyContact || ""} onChange={e => handleChange("emergencyContact", e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600" />
+                  {sameNumber(user?.contactNumber, user?.emergencyContact) && <p className="text-xs text-red-600 mt-1">Use a different number from your own contact number: this is who a bystander will call about you.</p>}
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3 mt-4">
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Guardian Details</label>

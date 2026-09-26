@@ -31,6 +31,13 @@ function validDob(value: string): boolean {
   return time < Date.now() && year >= new Date().getUTCFullYear() - 120;
 }
 
+/** Emergency/guardian contacts are people to call about the member, so they cannot be the member's own number. */
+export function contactConflict(own?: string | null, emergency?: string | null, guardian?: string | null): string | null {
+  if (own && emergency && own === emergency) return "Emergency contact must be a different number from your own contact number";
+  if (own && guardian && own === guardian) return "Guardian contact must be a different number from your own contact number";
+  return null;
+}
+
 /**
  * Validates and normalises profile input.
  *  - partial=false (registration): every field except `allergies` is required.
@@ -76,6 +83,7 @@ export function validateProfile(body: Record<string, unknown>, partial: boolean)
     text("guardianName", "Guardian name", 100),
     text("currentAddress", "Current address", 300),
   ];
+  errors.push(contactConflict(data.contactNumber, data.emergencyContact, data.guardianContact));
 
   if (need("dob")) {
     const dob = cleanString(body.dob, 10);

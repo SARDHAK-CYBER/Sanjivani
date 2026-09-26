@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/auth-guard";
 import { errorJson, readJsonObject, tooMany, unauthorized } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
 import { decryptPIIOrNull } from "@/lib/encryption";
-import { encryptProfile, serializeProfile, validateProfile } from "@/lib/profile";
+import { contactConflict, encryptProfile, serializeProfile, validateProfile } from "@/lib/profile";
 import { PhoneVerificationError, phoneErrorMessage, verifyPhoneProof } from "@/lib/phone-verification";
 import { sessionTtlSeconds, signSessionToken } from "@/lib/tokens";
 import { SESSION_COOKIE } from "@/lib/constants";
@@ -53,6 +53,14 @@ export async function PUT(request: Request) {
     const result = validateProfile(body, true);
     if (!result.ok) return errorJson(result.error, 400);
     const fields = result.data;
+
+    // A partial edit may omit some of these, so compare against what is already stored.
+    const conflict = contactConflict(
+      fields.contactNumber ?? decryptPIIOrNull(user.contactNumber),
+      fields.emergencyContact ?? decryptPIIOrNull(user.emergencyContact),
+      fields.guardianContact ?? decryptPIIOrNull(user.guardianContact)
+    );
+    if (conflict) return errorJson(conflict, 400);
 
     // The contact number is the account's 2FA factor. Changing it needs proof of the NEW number, or
     // anyone holding a session (e.g. a stolen laptop) could re-point 2FA at their own phone.
