@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Loader2, Save, QrCode } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { AlertCircle, Loader2, Save } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { PhoneOtp } from "@/components/PhoneOtp";
 import { TwoFactorCard } from "@/components/TwoFactorCard";
 import { parseE164 } from "@/lib/phone";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoutButton } from "@/components/LogoutButton";
-import { useQrBaseUrl } from "@/lib/use-qr-base-url";
+import { MemberAssets } from "@/components/MemberAssets";
 import type { MemberProfile } from "@/lib/types";
 
 export default function UserDashboard() {
@@ -19,7 +18,6 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const baseUrl = useQrBaseUrl();
   const [savedNumber, setSavedNumber] = useState(""); // the verified number currently on the account
   const [phoneProof, setPhoneProof] = useState(""); // proof that a *changed* number belongs to the user
   const [showVerify, setShowVerify] = useState(false);
@@ -220,36 +218,6 @@ export default function UserDashboard() {
               </div>
             </div>
             
-            {user?.assets && user.assets.length > 0 && (
-              <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
-                <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center"><QrCode className="w-5 h-5 mr-2 text-blue-500" /> Registered Assets & QR Codes</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {user.assets.map((asset) => (
-                    <div key={asset.id} className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center">
-                      <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 mb-3">
-                        {/* Rendered in the browser: the scan link contains the secret asset ID and must not be sent to a third-party QR service. */}
-                        <QRCodeSVG value={`${baseUrl}/scan/${asset.qrReferenceId}`} size={112} level="M" />
-                      </div>
-                      <h4 className="font-bold text-gray-900 dark:text-white">{asset.assetType}</h4>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{asset.identifier}</p>
-                      <p className="text-xs text-gray-500 font-mono mt-1 mb-2 bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded break-all">{asset.qrReferenceId}</p>
-
-                      <div className="flex gap-2 mt-2 w-full justify-center flex-wrap">
-                        {[asset.frontPhotoUrl, asset.backPhotoUrl, asset.leftPhotoUrl, asset.rightPhotoUrl, asset.rcPhotoUrl, asset.devicePhotoUrl]
-                          .filter((url): url is string => Boolean(url))
-                          .map((photoUrl) => (
-                            <a href={photoUrl} target="_blank" rel="noopener noreferrer" key={photoUrl} className="block w-12 h-12 rounded overflow-hidden border border-gray-300 flex-shrink-0">
-                              <img src={photoUrl} className="w-full h-full object-cover" alt="" />
-                            </a>
-                          ))}
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-3">* Assets are non-editable. Contact C2 Admin to modify.</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
             <div className="pt-6 border-t border-gray-200 dark:border-gray-800 flex justify-end">
                <button type="submit" disabled={saving} className="py-2 px-6 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors flex items-center">
                  {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
@@ -257,6 +225,8 @@ export default function UserDashboard() {
                </button>
             </div>
           </form>
+
+          {user && <MemberAssets initial={user.assets ?? []} />}
         </div>
       </main>
     </div>

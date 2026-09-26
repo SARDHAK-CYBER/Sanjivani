@@ -76,6 +76,7 @@ model AuditLog {
   action            String // e.g. "PROFILE_UPDATED"
   deviceFingerprint String? // User-Agent or a short context string
   geoId             String? // client IP (resolved via src/lib/ip.ts)
+  changesEnc        String? // encrypted JSON {field: {from, to}} for profile/asset edits
   createdAt         DateTime @default(now())
 
   @@index([userId, createdAt])

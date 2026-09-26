@@ -19,6 +19,8 @@ export type AuditLogEntry = {
   geoId: string | null;
   deviceFingerprint: string | null;
   createdAt: string;
+  /** Field-level before/after for profile and asset edits (decrypted for admins only). */
+  changes?: Record<string, { from: unknown; to: unknown }> | null;
   user?: { fullName: string | null; uii: string | null; role: string } | null;
 };
 

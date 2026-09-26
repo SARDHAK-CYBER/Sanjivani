@@ -8,7 +8,7 @@ import { contactConflict, encryptProfile, serializeProfile, validateProfile } fr
 import { PhoneVerificationError, phoneErrorMessage, verifyPhoneProof } from "@/lib/phone-verification";
 import { sessionTtlSeconds, signSessionToken } from "@/lib/tokens";
 import { SESSION_COOKIE } from "@/lib/constants";
-import { writeAudit } from "@/lib/audit";
+import { writeAudit, type AuditChanges } from "@/lib/audit";
 
 export async function GET() {
   try {
@@ -82,12 +82,14 @@ export async function PUT(request: Request) {
       }
     }
 
-    // Which fields actually changed -- names only, never values: the audit log is plain text and these are encrypted at rest.
+    // Which fields actually changed. The values go into the audit row encrypted (changesEnc); the plain-text detail lists names only.
     const before = serializeProfile(user) as unknown as Record<string, unknown>;
     const norm = (v: unknown) => (v === null || v === undefined || v === "" ? null : String(v));
-    const changed = Object.entries(fields as Record<string, unknown>)
-      .filter(([key, value]) => norm(value) !== norm(before[key]))
-      .map(([key]) => key);
+    const changes: AuditChanges = {};
+    for (const [key, value] of Object.entries(fields as Record<string, unknown>)) {
+      if (norm(value) !== norm(before[key])) changes[key] = { from: norm(before[key]), to: norm(value) };
+    }
+    const changed = Object.keys(changes);
 
     const updated = await prisma.user.update({
       where: { id: user.id },
@@ -102,7 +104,8 @@ export async function PUT(request: Request) {
       request,
       user.id,
       numberChanged ? "CONTACT_NUMBER_CHANGED" : "PROFILE_UPDATED",
-      changed.length ? `Changed: ${changed.join(", ")}` : "Saved with no changes"
+      changed.length ? `Changed: ${changed.join(", ")}` : "Saved with no changes",
+      changes
     );
 
     const response = NextResponse.json(serializeProfile(updated));

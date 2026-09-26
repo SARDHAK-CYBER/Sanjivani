@@ -6,6 +6,9 @@ export const SELF_SERVICE_ROLES = ["STUDENT", "STAFF", "SECURITY"] as const;
 
 export const ASSET_TYPES = ["VEHICLE", "LAPTOP", "MOBILE"] as const;
 
+export const ASSET_PHOTO_KEYS = ["frontPhotoUrl", "backPhotoUrl", "leftPhotoUrl", "rightPhotoUrl", "rcPhotoUrl", "devicePhotoUrl"] as const;
+export type AssetPhotoKey = (typeof ASSET_PHOTO_KEYS)[number];
+
 export const INCIDENT_STATUSES = ["NEW", "IN_PROGRESS", "RESOLVED", "BLOCKED", "FLAGGED"] as const;
 /** Statuses for which the bystander may still be shown the owner's emergency details. */
 export const PII_RELEASABLE_STATUSES = ["NEW", "IN_PROGRESS", "RESOLVED"] as const;
