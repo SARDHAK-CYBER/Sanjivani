@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, AlertCircle, Loader2, Save, QrCode } from "lucide-react";
+import { AlertCircle, Loader2, Save, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { Logo } from "@/components/Logo";
 import { PhoneOtp } from "@/components/PhoneOtp";
 import { TwoFactorCard } from "@/components/TwoFactorCard";
 import { parseE164 } from "@/lib/phone";
@@ -108,7 +109,7 @@ export default function UserDashboard() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 flex justify-between items-center transition-colors">
         <div className="flex items-center space-x-2">
-          <Shield className="w-6 h-6 text-red-600" />
+          <Logo size={40} className="rounded-xl" />
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Sanjivani Member Portal</h1>
         </div>
         <div className="flex items-center space-x-4">

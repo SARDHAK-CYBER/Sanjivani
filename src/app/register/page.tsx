@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldAlert, Loader2, CheckCircle2, Lock, Camera } from "lucide-react";
+import { Loader2, CheckCircle2, Lock, Camera } from "lucide-react";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PhoneOtp } from "@/components/PhoneOtp";
 import { validatePassword } from "@/lib/password";
@@ -133,7 +134,7 @@ export default function RegisterPage() {
       
       <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800 transition-colors">
         <div className="p-8 border-b border-gray-100 dark:border-gray-800 bg-gray-900 text-white text-center">
-          <ShieldAlert className="w-12 h-12 mx-auto mb-2 text-red-500" />
+          <Logo size={80} className="mb-3" />
           <h2 className="text-2xl font-bold">Sanjivani Identity Registration</h2>
           <p className="text-gray-400 text-sm mt-1">Create your secure, encrypted UII profile</p>
         </div>

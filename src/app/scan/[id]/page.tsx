@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Camera, MapPin, AlertCircle, PhoneCall, HeartPulse, ShieldAlert, RefreshCw, Activity, Loader2 } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { PhoneOtp } from "@/components/PhoneOtp";
 import type { ReleasedEmergencyInfo } from "@/lib/types";
 
@@ -221,6 +222,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 sm:px-6">
+      <Logo size={72} className="mb-4 shadow-sm" />
       <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div className="bg-red-600 p-6 text-center text-white">
           <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-90" />

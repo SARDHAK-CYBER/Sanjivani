@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ShieldAlert, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Home() {
@@ -8,7 +9,7 @@ export default function Home() {
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      <ShieldAlert className="w-20 h-20 text-red-600 mb-6" />
+      <Logo size={112} className="mb-6 rounded-3xl shadow-md" />
       <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-gray-900 dark:text-white">
         Sanjivani <span className="text-red-600">Emergency Response</span>
       </h1>

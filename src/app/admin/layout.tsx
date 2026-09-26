@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Users, Car, ShieldAlert, LayoutDashboard, FileText } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoutButton } from "@/components/LogoutButton";
 
@@ -9,7 +10,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 hidden md:flex flex-col transition-colors">
         <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-800">
-          <ShieldAlert className="w-6 h-6 text-red-600 mr-2" />
+          <Logo size={36} className="mr-2 rounded-xl" />
           <span className="text-lg font-bold text-gray-900 dark:text-white">Sanjivani C2 Center</span>
         </div>
         
@@ -46,7 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 md:hidden transition-colors">
           <div className="flex items-center">
-            <ShieldAlert className="w-6 h-6 text-red-600 mr-2" />
+            <Logo size={36} className="mr-2 rounded-xl" />
             <span className="text-lg font-bold text-gray-900 dark:text-white">Sanjivani C2 Center</span>
           </div>
           <ThemeToggle />

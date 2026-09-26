@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldAlert, Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function ForgotPasswordPage() {
@@ -44,7 +45,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800 transition-colors">
         <div className="p-8">
           <div className="flex justify-center mb-6">
-            <ShieldAlert className="w-12 h-12 text-red-600" />
+            <Logo size={80} />
           </div>
           <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">
             Reset Password
