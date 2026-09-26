@@ -102,23 +102,23 @@ export default function UserDashboard() {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center dark:bg-gray-950"><Loader2 className="w-8 h-8 animate-spin text-red-600" /></div>;
+  if (loading) return <div className="min-h-dvh flex items-center justify-center dark:bg-gray-950"><Loader2 className="w-8 h-8 animate-spin text-red-600" /></div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
+    <div className="min-h-dvh bg-gray-50 dark:bg-gray-950 transition-colors">
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 flex justify-between items-center transition-colors">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 min-w-0">
           <Logo size={40} className="rounded-xl" />
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Sanjivani Member Portal</h1>
+          <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">Sanjivani Member Portal</h1>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3 sm:space-x-4 shrink-0">
           <ThemeToggle />
           <LogoutButton />
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto py-8 px-4">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 transition-colors">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 sm:p-8 transition-colors">
           
           <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100 dark:border-gray-800">
              <div>
@@ -163,7 +163,7 @@ export default function UserDashboard() {
 
               <div className="space-y-4">
                 <h3 className="font-bold text-gray-900 dark:text-white flex items-center"><AlertCircle className="w-4 h-4 mr-2 text-red-500"/> Emergency PII</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Blood Group</label>
                     <input required type="text" value={user?.bloodGroup || ""} onChange={e => handleChange("bloodGroup", e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600" />
@@ -199,15 +199,15 @@ export default function UserDashboard() {
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3 mt-4">
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Guardian Details</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <select value={user?.guardianRelation || ""} onChange={e => handleChange("guardianRelation", e.target.value)} className="col-span-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <select value={user?.guardianRelation || ""} onChange={e => handleChange("guardianRelation", e.target.value)} className="sm:col-span-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600">
                       <option value="Father">Father</option>
                       <option value="Mother">Mother</option>
                       <option value="Husband">Husband</option>
                       <option value="Wife">Wife</option>
                       <option value="Guardian">Guardian</option>
                     </select>
-                    <input required type="text" placeholder="Full Name" value={user?.guardianName || ""} onChange={e => handleChange("guardianName", e.target.value)} className="col-span-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600" />
+                    <input required type="text" placeholder="Full Name" value={user?.guardianName || ""} onChange={e => handleChange("guardianName", e.target.value)} className="sm:col-span-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600" />
                   </div>
                   <input required type="tel" placeholder="Guardian Contact Number" value={user?.guardianContact || ""} onChange={e => handleChange("guardianContact", e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600" />
                 </div>

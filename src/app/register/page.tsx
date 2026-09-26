@@ -118,8 +118,8 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6 transition-colors">
-         <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 text-center">
+      <div className="min-h-dvh flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-3 sm:p-6 transition-colors">
+         <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-5 sm:p-8 text-center">
             <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Registration Successful</h2>
             <p className="text-gray-500 dark:text-gray-400">All data fully encrypted. On your first sign-in you will confirm your phone and set up an authenticator app. Redirecting to login...</p>
@@ -129,18 +129,18 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6 transition-colors py-12">
+    <div className="min-h-dvh flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-3 sm:p-6 transition-colors py-12">
       <div className="absolute top-4 right-4"><ThemeToggle /></div>
       
       <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800 transition-colors">
-        <div className="p-8 border-b border-gray-100 dark:border-gray-800 bg-gray-900 text-white text-center">
+        <div className="p-5 sm:p-8 border-b border-gray-100 dark:border-gray-800 bg-gray-900 text-white text-center">
           <Logo size={80} className="mb-3" />
           <h2 className="text-2xl font-bold">Sanjivani Identity Registration</h2>
           <p className="text-gray-400 text-sm mt-1">Create your secure, encrypted UII profile</p>
         </div>
 
         {step === 1 && (
-          <form onSubmit={handleInitialSubmit} className="p-8 space-y-6">
+          <form onSubmit={handleInitialSubmit} className="p-5 sm:p-8 space-y-6">
             {error && <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-lg text-center">{error}</div>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -157,9 +157,9 @@ export default function RegisterPage() {
                          <Camera className="w-6 h-6 text-gray-400" />
                        )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profile Photo *</label>
-                      <input required type="file" accept="image/*" onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)} className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
+                      <input required type="file" accept="image/*" onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)} className="w-full min-w-0 text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100" />
                     </div>
                   </div>
                   
@@ -171,9 +171,9 @@ export default function RegisterPage() {
                           <span className="text-[10px] font-bold text-blue-600">ID CARD</span>
                         )}
                      </div>
-                     <div className="flex-1">
+                     <div className="flex-1 min-w-0">
                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ID Card Photocopy *</label>
-                       <input required type="file" accept="image/*" onChange={(e) => setIdCardPhoto(e.target.files?.[0] || null)} className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                       <input required type="file" accept="image/*" onChange={(e) => setIdCardPhoto(e.target.files?.[0] || null)} className="w-full min-w-0 text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
                      </div>
                   </div>
                 </div>
@@ -189,7 +189,7 @@ export default function RegisterPage() {
                   <p className="text-[10px] text-gray-500 mt-1 flex items-center"><Lock className="w-3 h-3 mr-1"/> Password will be securely hashed natively</p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name *</label>
                     <input required type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600" />
@@ -200,7 +200,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role *</label>
                     <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600">
@@ -225,7 +225,7 @@ export default function RegisterPage() {
                    </span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Blood Group *</label>
                     <select required value={bloodGroup} onChange={(e) => setBloodGroup(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600">
@@ -246,7 +246,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">My Contact *</label>
                     <input required type="tel" value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600" />
@@ -259,15 +259,15 @@ export default function RegisterPage() {
 
                 <div className="space-y-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">Primary Guardian Details *</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <select value={guardianRelation} onChange={(e) => setGuardianRelation(e.target.value)} className="col-span-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <select value={guardianRelation} onChange={(e) => setGuardianRelation(e.target.value)} className="sm:col-span-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600">
                       <option value="Father">Father</option>
                       <option value="Mother">Mother</option>
                       <option value="Husband">Husband</option>
                       <option value="Wife">Wife</option>
                       <option value="Guardian">Guardian</option>
                     </select>
-                    <input required type="text" placeholder="Full Name" value={guardianName} onChange={(e) => setGuardianName(e.target.value)} className="col-span-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600" />
+                    <input required type="text" placeholder="Full Name" value={guardianName} onChange={(e) => setGuardianName(e.target.value)} className="sm:col-span-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600" />
                   </div>
                   <input required type="tel" placeholder="Guardian Contact Number" value={guardianContact} onChange={(e) => setGuardianContact(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-red-600" />
                 </div>
@@ -292,7 +292,7 @@ export default function RegisterPage() {
         )}
 
         {step === 2 && (
-          <div className="p-8 space-y-6 max-w-md mx-auto">
+          <div className="p-5 sm:p-8 space-y-6 max-w-md mx-auto">
             {error && <div role="alert" className="p-3 bg-red-50 text-red-600 text-sm rounded-lg text-center">{error}</div>}
 
             <div className="text-center">

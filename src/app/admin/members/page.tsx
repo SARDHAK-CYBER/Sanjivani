@@ -50,7 +50,7 @@ export default function MembersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap gap-3 justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Accounts Directory</h1>
         <Link 
           href="/register" target="_blank"
@@ -74,7 +74,7 @@ export default function MembersPage() {
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto transition-colors">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+        <table className="stack-table min-w-full divide-y divide-gray-200 dark:divide-gray-800">
           <thead className="bg-gray-50 dark:bg-gray-800/50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">UII</th>
@@ -87,15 +87,15 @@ export default function MembersPage() {
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
             {members.map(member => (
               <tr key={member.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition cursor-pointer" onClick={() => router.push(`/admin/members/${member.id}`)}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-bold text-gray-900 dark:text-white">{member.uii || "N/A"}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{member.fullName}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <td data-label="UII" className="px-6 py-4 whitespace-nowrap text-sm font-mono font-bold text-gray-900 dark:text-white">{member.uii || "N/A"}</td>
+                <td data-label="Name" className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{member.fullName}</td>
+                <td data-label="Role" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${member.role === 'STUDENT' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : member.role === 'ADMIN' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'}`}>
                     {member.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{member.rruIdNumber}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td data-label="RRU ID" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{member.rruIdNumber}</td>
+                <td data-label="Actions" className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                    <Link href={`/admin/members/${member.id}`} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 flex items-center justify-end w-full">
                      <Eye className="w-4 h-4 mr-1" /> View Deep Profile
                    </Link>

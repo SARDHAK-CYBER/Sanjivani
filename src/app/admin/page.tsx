@@ -30,15 +30,15 @@ export default function AdminDashboard() {
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard Overview</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center transition-colors">
+        <div className="bg-white dark:bg-gray-900 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center transition-colors">
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-full mr-4"><Users className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>
           <div><p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Members</p><p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.members}</p></div>
         </div>
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center transition-colors">
+        <div className="bg-white dark:bg-gray-900 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center transition-colors">
           <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-full mr-4"><Car className="w-6 h-6 text-green-600 dark:text-green-400" /></div>
           <div><p className="text-sm font-medium text-gray-500 dark:text-gray-400">Registered Assets</p><p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.assets}</p></div>
         </div>
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center transition-colors">
+        <div className="bg-white dark:bg-gray-900 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center transition-colors">
           <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-full mr-4"><AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" /></div>
           <div><p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Incidents</p><p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.incidents}</p></div>
         </div>
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+          <table className="stack-table min-w-full divide-y divide-gray-200 dark:divide-gray-800">
             <thead className="bg-gray-50 dark:bg-gray-800/50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
@@ -72,20 +72,20 @@ export default function AdminDashboard() {
                 
                 return (
                   <tr key={inc.id} className={inc.status === 'NEW' ? 'bg-red-50/50 dark:bg-red-900/10' : ''}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td data-label="Status" className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${inc.status === 'NEW' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'}`}>
                         {inc.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td data-label="Asset (owner)" className="px-6 py-4 whitespace-nowrap">
                       <p className="text-sm font-bold text-gray-900 dark:text-white">{inc.asset?.identifier}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{inc.asset?.user?.fullName}</p>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td data-label="Reporter" className="px-6 py-4 whitespace-nowrap">
                        <p className="text-sm text-gray-900 dark:text-white font-medium">{inc.bystander?.mobileNumber}</p>
                        {inc.bystander?.verified && <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded">Verified SMS</span>}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td data-label="Evidence & location" className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex flex-col space-y-1">
                         {inc.selfieUrl && <a href={inc.selfieUrl} target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center">Selfie Photo <ExternalLink className="w-3 h-3 ml-1"/></a>}
                         {inc.scenePhotoUrl && <a href={inc.scenePhotoUrl} target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center">Scene 1 <ExternalLink className="w-3 h-3 ml-1"/></a>}
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                    <td data-label="Device" className="px-6 py-4 text-xs text-gray-500 dark:text-gray-400 space-y-1">
                       <div className="flex items-start">
                         <Network className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" /> 
                         <span className="font-mono">IP: {inc.ipAddress || "Unknown"}</span>
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
                         <p>IMEI: <span className="text-red-400" title="Web browsers cannot access IMEI">Requires Native App</span></p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(inc.createdAt).toLocaleString()}</td>
+                    <td data-label="Time" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(inc.createdAt).toLocaleString()}</td>
                   </tr>
                 );
               })}

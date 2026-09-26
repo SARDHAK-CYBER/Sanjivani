@@ -38,12 +38,12 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6 transition-colors">
+    <div className="min-h-dvh flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-3 sm:p-6 transition-colors">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800 transition-colors">
-        <div className="p-8">
+        <div className="p-5 sm:p-8">
           <div className="flex justify-center mb-6">
             <Logo size={80} />
           </div>

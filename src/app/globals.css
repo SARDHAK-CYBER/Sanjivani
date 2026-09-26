@@ -24,3 +24,89 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Responsive foundations (phones, tablets, desktop; Android, iOS, web) ─────────────────────────────── */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  overflow-x: clip; /* one over-wide element must never make the whole page scroll sideways */
+  -webkit-tap-highlight-color: transparent;
+}
+a, button, [role="button"], label, select, summary {
+  touch-action: manipulation; /* no double-tap-zoom delay on taps */
+}
+img, svg, video, canvas {
+  max-width: 100%;
+}
+
+/* iOS Safari zooms the page when a focused control's text is under 16px, so keep them at 16px on touch-size screens. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Notches and home indicators (viewport-fit=cover): pad fixed bars with the safe-area insets. */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+/* Wide data tables become stacked cards on phones: each cell shows its column name (data-label) beside its value. */
+@media (max-width: 767px) {
+  table.stack-table,
+  .stack-table tbody,
+  .stack-table tr,
+  .stack-table td {
+    display: block;
+    width: 100%;
+  }
+  .stack-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .stack-table tr {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgb(229 231 235);
+  }
+  .dark .stack-table tr {
+    border-bottom-color: rgb(31 41 55);
+  }
+  .stack-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    white-space: normal;
+    text-align: right;
+    max-width: none;
+  }
+  .stack-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    max-width: 40%;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgb(107 114 128);
+  }
+  .stack-table td > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .stack-table td[colspan] {
+    display: block;
+    text-align: center;
+  }
+  .stack-table td[colspan]::before {
+    content: none;
+  }
+}

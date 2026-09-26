@@ -127,7 +127,7 @@ export default function AssetsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap gap-3 justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Assets & QR Codes</h1>
         <button 
           onClick={() => setShowForm(!showForm)}

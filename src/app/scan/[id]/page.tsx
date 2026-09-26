@@ -213,7 +213,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
 
   if (invalidQr) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="min-h-dvh flex items-center justify-center bg-gray-50 p-6">
         <div className="max-w-sm text-center">
           <AlertCircle className="w-12 h-12 mx-auto text-red-600 mb-3" />
           <h1 className="text-xl font-bold text-gray-900">This QR code is not valid</h1>
@@ -226,7 +226,7 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
   if (!assetInfo) return <div className="p-8 text-center text-gray-600">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 sm:px-6">
+    <div className="min-h-dvh bg-gray-50 flex flex-col items-center py-6 sm:py-12 px-4 sm:px-6 pb-safe">
       <Logo size={72} className="mb-4 shadow-sm" />
       <div className="max-w-md w-full bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         <div className="bg-red-600 p-6 text-center text-white">

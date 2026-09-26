@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+    <div className="min-h-dvh flex flex-col items-center justify-center p-6 text-center">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>

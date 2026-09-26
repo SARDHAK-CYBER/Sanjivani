@@ -62,7 +62,7 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
   if (notFound || !member) return <div className="p-8 text-center text-red-500">Member not found.</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
+    <div className="min-h-dvh bg-gray-50 dark:bg-gray-950 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         
         <div className="flex items-center justify-between">
@@ -103,7 +103,7 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
               <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
                 <span className="block text-xs text-gray-500 mb-1">Email</span>
-                <span className="font-medium text-gray-900 dark:text-white">{member.email}</span>
+                <span className="font-medium text-gray-900 dark:text-white break-all">{member.email}</span>
               </div>
               <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
                 <span className="block text-xs text-gray-500 mb-1 flex items-center"><Lock className="w-3 h-3 mr-1 text-green-500"/> Date of Birth</span>
@@ -221,7 +221,7 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
           </div>
 
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+            <table className="stack-table min-w-full divide-y divide-gray-200 dark:divide-gray-800">
               <thead className="bg-gray-50 dark:bg-gray-800/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timestamp</th>
@@ -233,12 +233,12 @@ export default function MemberProfilePage({ params }: { params: Promise<{ id: st
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                 {filteredLogs.map((log) => (
                   <tr key={log.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(log.createdAt).toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td data-label="Time" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(log.createdAt).toLocaleString()}</td>
+                    <td data-label="Event" className="px-6 py-4 whitespace-nowrap">
                        <span className="text-xs font-bold px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-full border border-red-200 dark:border-red-800">{log.action}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-mono">{log.geoId}</td>
-                    <td className="px-6 py-4 text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate" title={log.deviceFingerprint ?? undefined}>{log.deviceFingerprint}</td>
+                    <td data-label="Network" className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-mono">{log.geoId}</td>
+                    <td data-label="Device" className="px-6 py-4 text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate" title={log.deviceFingerprint ?? undefined}>{log.deviceFingerprint}</td>
                   </tr>
                 ))}
                 {filteredLogs.length === 0 && (

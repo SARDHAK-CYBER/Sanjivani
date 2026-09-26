@@ -73,7 +73,7 @@ export default function AuditLogsPage() {
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-x-auto transition-colors">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+        <table className="stack-table min-w-full divide-y divide-gray-200 dark:divide-gray-800">
           <thead className="bg-gray-50 dark:bg-gray-800/50">
             <tr>
               {["Timestamp", "User (UII)", "Action event", "GeoID (IP)", "Details / device"].map((h) => (
@@ -88,16 +88,16 @@ export default function AuditLogsPage() {
               return (
                 <Fragment key={log.id}>
                   <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(log.createdAt).toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td data-label="Time" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(log.createdAt).toLocaleString()}</td>
+                    <td data-label="User" className="px-6 py-4 whitespace-nowrap">
                       <p className="text-sm font-bold text-gray-900 dark:text-white">{log.user?.fullName}</p>
                       <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{log.user?.uii}</p>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td data-label="Event" className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <span className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-1 rounded text-xs">{log.action}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">{log.geoId}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-sm break-words" title={log.deviceFingerprint ?? undefined}>
+                    <td data-label="IP" className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 dark:text-gray-400">{log.geoId}</td>
+                    <td data-label="Details" className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-sm break-words" title={log.deviceFingerprint ?? undefined}>
                       {log.deviceFingerprint}
                       {changes.length > 0 && (
                         <button onClick={() => setOpen(expanded ? null : log.id)} className="mt-1 flex items-center text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">

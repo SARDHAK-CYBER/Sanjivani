@@ -2,13 +2,14 @@ import Link from "next/link";
 import { Users, Car, LayoutDashboard, FileText } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { AdminAlertsProvider, IncidentsNavLink } from "@/components/AdminAlerts";
+import { AdminMobileNav } from "@/components/AdminMobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoutButton } from "@/components/LogoutButton";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminAlertsProvider>
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex transition-colors">
+    <div className="min-h-dvh bg-gray-50 dark:bg-gray-950 flex transition-colors">
       {/* Sidebar */}
       <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 hidden md:flex flex-col transition-colors">
         <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-800">
@@ -44,18 +45,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 md:hidden transition-colors">
-          <div className="flex items-center">
-            <Logo size={36} className="mr-2 rounded-xl" />
-            <span className="text-lg font-bold text-gray-900 dark:text-white">Sanjivani C2 Center</span>
+        <header className="sticky top-0 z-30 h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between gap-2 px-4 pt-safe md:hidden transition-colors">
+          <div className="flex items-center min-w-0">
+            <Logo size={32} className="mr-2 rounded-lg" />
+            <span className="text-base font-bold text-gray-900 dark:text-white truncate">Sanjivani C2 Center</span>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-3 shrink-0">
+            <ThemeToggle />
+            <LogoutButton />
+          </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
           {children}
         </div>
       </main>
     </div>
+    <AdminMobileNav />
     </AdminAlertsProvider>
   );
 }
