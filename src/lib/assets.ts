@@ -1,4 +1,4 @@
-import { ASSET_PHOTO_KEYS, type AssetPhotoKey } from "@/lib/constants";
+import { ASSET_PHOTO_KEYS, ASSET_PHOTO_SLOTS, type AssetPhotoKey, type AssetType } from "@/lib/constants";
 import { StorageError, adoptTempFile } from "@/lib/storage";
 
 export const MAX_ASSETS_PER_MEMBER = 10;
@@ -32,4 +32,10 @@ export async function adoptAssetPhotos(body: Record<string, unknown>, ownerId: s
     else throw new StorageError("Invalid file reference.");
   }
   return out;
+}
+
+/** For a new asset: the label of the first required photo the request lacks, or null if it has them all. */
+export function missingRequiredPhoto(assetType: AssetType, body: Record<string, unknown>): string | null {
+  const slot = ASSET_PHOTO_SLOTS[assetType].find(({ key, required }) => required && !(typeof body[key] === "string" && body[key]));
+  return slot ? `${slot.label} photo is required for a ${assetType.toLowerCase()}.` : null;
 }

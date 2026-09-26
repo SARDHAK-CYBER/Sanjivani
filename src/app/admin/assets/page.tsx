@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Plus, QrCode, UploadCloud, Loader2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useQrBaseUrl } from "@/lib/use-qr-base-url";
+import { ASSET_PHOTO_SLOTS, type AssetPhotoKey, type AssetType } from "@/lib/constants";
 import { usePolling } from "@/lib/use-polling";
 
 type User = {
@@ -35,13 +36,8 @@ export default function AssetsPage() {
   const [ownerSearch, setOwnerSearch] = useState("");
   const [formError, setFormError] = useState("");
 
-  // Photos State
-  const [frontPhoto, setFrontPhoto] = useState<File | null>(null);
-  const [backPhoto, setBackPhoto] = useState<File | null>(null);
-  const [leftPhoto, setLeftPhoto] = useState<File | null>(null);
-  const [rightPhoto, setRightPhoto] = useState<File | null>(null);
-  const [rcPhoto, setRcPhoto] = useState<File | null>(null);
-  const [devicePhoto, setDevicePhoto] = useState<File | null>(null);
+  // Photos State: which file is chosen for each slot of the selected asset type
+  const [photos, setPhotos] = useState<Partial<Record<AssetPhotoKey, File>>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -90,19 +86,25 @@ export default function AssetsPage() {
     setFormError("");
 
     try {
-      const frontPhotoUrl = await handleUpload(frontPhoto);
-      const backPhotoUrl = await handleUpload(backPhoto);
-      const leftPhotoUrl = await handleUpload(leftPhoto);
-      const rightPhotoUrl = await handleUpload(rightPhoto);
-      const rcPhotoUrl = await handleUpload(rcPhoto);
-      const devicePhotoUrl = await handleUpload(devicePhoto);
+      const slots = ASSET_PHOTO_SLOTS[assetType as AssetType];
+      const missing = slots.find(({ key, required }) => required && !photos[key]);
+      if (missing) {
+        setFormError(`${missing.label} photo is required.`);
+        return;
+      }
+      const uploaded: Record<string, string | null> = {};
+      await Promise.all(
+        slots.map(async ({ key }) => {
+          uploaded[key] = await handleUpload(photos[key] ?? null);
+        })
+      );
 
       const res = await fetch("/api/assets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           userId, assetType, identifier,
-          frontPhotoUrl, backPhotoUrl, leftPhotoUrl, rightPhotoUrl, rcPhotoUrl, devicePhotoUrl
+          ...uploaded
         }),
       });
       
@@ -111,7 +113,7 @@ export default function AssetsPage() {
         setReloadKey((k) => k + 1);
         setIdentifier("");
         setUserId("");
-        setFrontPhoto(null); setBackPhoto(null); setLeftPhoto(null); setRightPhoto(null); setRcPhoto(null); setDevicePhoto(null);
+        setPhotos({});
       } else {
         const data = await res.json().catch(() => ({}));
         setFormError(data.error || "Failed to create asset");
@@ -149,7 +151,7 @@ export default function AssetsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Asset Type</label>
-              <select value={assetType} onChange={e=>setAssetType(e.target.value)} className="w-full px-3 py-2 border dark:border-gray-700 dark:bg-gray-800 rounded-lg outline-none text-gray-900 dark:text-white">
+              <select value={assetType} onChange={e=>{ setAssetType(e.target.value); setPhotos({}); }} className="w-full px-3 py-2 border dark:border-gray-700 dark:bg-gray-800 rounded-lg outline-none text-gray-900 dark:text-white">
                 <option value="VEHICLE">Vehicle</option>
                 <option value="LAPTOP">Laptop</option>
                 <option value="MOBILE">Mobile Device</option>
@@ -163,53 +165,17 @@ export default function AssetsPage() {
 
           <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
             <h3 className="font-bold text-gray-900 dark:text-white mb-4">Upload Asset Photos</h3>
-            {assetType === "VEHICLE" ? (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-center bg-gray-50 dark:bg-gray-800/50">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {ASSET_PHOTO_SLOTS[assetType as AssetType].map(({ key, label, required }) => (
+                <div key={key} className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-center bg-gray-50 dark:bg-gray-800/50">
                   <label className="cursor-pointer">
                     <UploadCloud className="mx-auto w-6 h-6 text-gray-400 mb-2"/>
-                    <span className="block text-xs font-medium text-gray-600 dark:text-gray-300">{frontPhoto ? frontPhoto.name : "Front Photo"}</span>
-                    <input type="file" accept="image/*" onChange={e => setFrontPhoto(e.target.files?.[0] || null)} className="hidden" />
+                    <span className="block text-xs font-medium text-gray-600 dark:text-gray-300 break-all">{photos[key] ? photos[key]!.name : label}{required && !photos[key] ? " *" : ""}</span>
+                    <input type="file" accept="image/*" onChange={e => { const file = e.target.files?.[0]; setPhotos(p => { const next = { ...p }; if (file) next[key] = file; else delete next[key]; return next; }); }} className="hidden" />
                   </label>
                 </div>
-                <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-center bg-gray-50 dark:bg-gray-800/50">
-                  <label className="cursor-pointer">
-                    <UploadCloud className="mx-auto w-6 h-6 text-gray-400 mb-2"/>
-                    <span className="block text-xs font-medium text-gray-600 dark:text-gray-300">{backPhoto ? backPhoto.name : "Back Photo"}</span>
-                    <input type="file" accept="image/*" onChange={e => setBackPhoto(e.target.files?.[0] || null)} className="hidden" />
-                  </label>
-                </div>
-                <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-center bg-gray-50 dark:bg-gray-800/50">
-                  <label className="cursor-pointer">
-                    <UploadCloud className="mx-auto w-6 h-6 text-gray-400 mb-2"/>
-                    <span className="block text-xs font-medium text-gray-600 dark:text-gray-300">{leftPhoto ? leftPhoto.name : "Left Photo"}</span>
-                    <input type="file" accept="image/*" onChange={e => setLeftPhoto(e.target.files?.[0] || null)} className="hidden" />
-                  </label>
-                </div>
-                <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-center bg-gray-50 dark:bg-gray-800/50">
-                  <label className="cursor-pointer">
-                    <UploadCloud className="mx-auto w-6 h-6 text-gray-400 mb-2"/>
-                    <span className="block text-xs font-medium text-gray-600 dark:text-gray-300">{rightPhoto ? rightPhoto.name : "Right Photo"}</span>
-                    <input type="file" accept="image/*" onChange={e => setRightPhoto(e.target.files?.[0] || null)} className="hidden" />
-                  </label>
-                </div>
-                <div className="p-4 border border-dashed border-blue-300 dark:border-blue-700/50 rounded-lg text-center bg-blue-50 dark:bg-blue-900/10">
-                  <label className="cursor-pointer">
-                    <UploadCloud className="mx-auto w-6 h-6 text-blue-500 mb-2"/>
-                    <span className="block text-xs font-bold text-blue-600 dark:text-blue-400">{rcPhoto ? rcPhoto.name : "RC Book/Card"}</span>
-                    <input type="file" accept="image/*" onChange={e => setRcPhoto(e.target.files?.[0] || null)} className="hidden" />
-                  </label>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-center bg-gray-50 dark:bg-gray-800/50 max-w-sm">
-                <label className="cursor-pointer">
-                  <UploadCloud className="mx-auto w-6 h-6 text-gray-400 mb-2"/>
-                  <span className="block text-sm font-medium text-gray-600 dark:text-gray-300">{devicePhoto ? devicePhoto.name : "Upload Device Photo"}</span>
-                  <input type="file" accept="image/*" onChange={e => setDevicePhoto(e.target.files?.[0] || null)} className="hidden" />
-                </label>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
 
           <button disabled={loading} type="submit" className="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold px-4 py-3 rounded-lg hover:bg-gray-800 transition flex justify-center items-center">

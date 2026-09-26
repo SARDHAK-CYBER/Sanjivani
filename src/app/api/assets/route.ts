@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guard";
 import { cleanString, errorJson, readJsonObject, unauthorized } from "@/lib/http";
-import { ASSET_TYPES } from "@/lib/constants";
+import { ASSET_TYPES, type AssetType } from "@/lib/constants";
+import { missingRequiredPhoto } from "@/lib/assets";
 import { StorageError, adoptOptionalTempFile } from "@/lib/storage";
 import { writeAudit } from "@/lib/audit";
 
@@ -51,6 +52,9 @@ export async function POST(request: Request) {
     if (typeof assetType !== "string" || !(ASSET_TYPES as readonly string[]).includes(assetType)) {
       return errorJson("Invalid asset type", 400);
     }
+
+    const missing = missingRequiredPhoto(assetType as AssetType, body);
+    if (missing) return errorJson(missing, 400);
 
     const owner = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
     if (!owner) return errorJson("Owner not found", 404);

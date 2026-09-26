@@ -3,23 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Pencil, Plus, QrCode, Trash2, UploadCloud, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { ASSET_PHOTO_KEYS, ASSET_TYPES, type AssetPhotoKey } from "@/lib/constants";
+import { ASSET_PHOTO_KEYS, ASSET_PHOTO_SLOTS, ASSET_TYPES, type AssetPhotoKey, type AssetType } from "@/lib/constants";
 import { useQrBaseUrl } from "@/lib/use-qr-base-url";
 import type { AssetSummary } from "@/lib/types";
 
-const LABELS: Record<AssetPhotoKey, string> = {
-  frontPhotoUrl: "Front",
-  backPhotoUrl: "Back",
-  leftPhotoUrl: "Left",
-  rightPhotoUrl: "Right",
-  rcPhotoUrl: "RC book / card",
-  devicePhotoUrl: "Device photo",
-};
-const SLOTS: Record<string, AssetPhotoKey[]> = {
-  VEHICLE: ["frontPhotoUrl", "backPhotoUrl", "leftPhotoUrl", "rightPhotoUrl", "rcPhotoUrl"],
-  LAPTOP: ["devicePhotoUrl"],
-  MOBILE: ["devicePhotoUrl"],
-};
 const IDENTIFIER_HINT: Record<string, string> = { VEHICLE: "Licence plate, e.g. GJ-01-AB-1234", LAPTOP: "Serial number", MOBILE: "IMEI or serial number" };
 
 const field =
@@ -45,9 +32,11 @@ export function MemberAssets({ initial }: { initial: AssetSummary[] }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState(false);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/user/assets").catch(() => null);
+    setLoadError(!res?.ok);
     if (res?.ok) setAssets(await res.json());
   }, []);
 
@@ -76,6 +65,10 @@ export function MemberAssets({ initial }: { initial: AssetSummary[] }) {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!draft) return;
+    if (!draft.id) {
+      const missing = ASSET_PHOTO_SLOTS[draft.assetType as AssetType].find(({ key, required }) => required && !draft.files[key]);
+      if (missing) return setError(`${missing.label} photo is required.`);
+    }
     setBusy(true);
     setError("");
     try {
@@ -121,6 +114,7 @@ export function MemberAssets({ initial }: { initial: AssetSummary[] }) {
         )}
       </div>
 
+      {loadError && <div role="alert" className="mb-4 p-3 text-sm rounded-lg bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">Could not refresh your assets. Showing the last loaded list; it will retry automatically.</div>}
       {error && !draft && <div role="alert" className="mb-4 p-3 text-sm rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">{error}</div>}
 
       {draft && (
@@ -145,17 +139,17 @@ export function MemberAssets({ initial }: { initial: AssetSummary[] }) {
           </div>
 
           <div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Photos (optional, JPEG/PNG/WebP up to 5 MB)</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{draft.assetType === "VEHICLE" ? "Photos (optional, JPEG/PNG/WebP up to 5 MB)" : "Photos (* required, JPEG/PNG/WebP up to 5 MB)"}</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {(SLOTS[draft.assetType] ?? []).map((key) => {
+              {(ASSET_PHOTO_SLOTS[draft.assetType as AssetType] ?? []).map(({ key, label, required }) => {
                 const file = draft.files[key];
                 const existingUrl = !draft.removed[key] ? draft.existing[key] : null;
                 return (
                   <div key={key} className="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 p-3 text-center">
-                    {existingUrl && !file && <img src={existingUrl} alt={LABELS[key]} className="mx-auto mb-2 h-16 w-16 rounded object-cover border border-gray-200" />}
+                    {existingUrl && !file && <img src={existingUrl} alt={label} className="mx-auto mb-2 h-16 w-16 rounded object-cover border border-gray-200" />}
                     <label className="cursor-pointer block">
                       <UploadCloud className="w-5 h-5 mx-auto text-blue-500 mb-1" />
-                      <span className="block text-xs font-medium text-gray-600 dark:text-gray-300 break-all">{file ? file.name : existingUrl ? `Replace ${LABELS[key]}` : LABELS[key]}</span>
+                      <span className="block text-xs font-medium text-gray-600 dark:text-gray-300 break-all">{file ? file.name : existingUrl ? `Replace ${label}` : label}{required && !file && !existingUrl ? " *" : ""}</span>
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setDraft({ ...draft, files: { ...draft.files, [key]: f }, removed: { ...draft.removed, [key]: false } }); }} />
                     </label>
                     {(existingUrl || file) && (

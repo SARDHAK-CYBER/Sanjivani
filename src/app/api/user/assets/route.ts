@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth-guard";
 import { cleanString, errorJson, readJsonObject, tooMany, unauthorized } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
-import { ASSET_TYPES } from "@/lib/constants";
-import { MAX_ASSETS_PER_MEMBER, adoptAssetPhotos, assetSummarySelect } from "@/lib/assets";
+import { ASSET_TYPES, type AssetType } from "@/lib/constants";
+import { MAX_ASSETS_PER_MEMBER, adoptAssetPhotos, assetSummarySelect, missingRequiredPhoto } from "@/lib/assets";
 import { StorageError } from "@/lib/storage";
 import { writeAudit } from "@/lib/audit";
 
@@ -35,6 +35,9 @@ export async function POST(request: Request) {
     const assetType = body.assetType;
     if (!identifier) return errorJson("Identifier is required (licence plate or serial number)", 400);
     if (typeof assetType !== "string" || !(ASSET_TYPES as readonly string[]).includes(assetType)) return errorJson("Invalid asset type", 400);
+
+    const missing = missingRequiredPhoto(assetType as AssetType, body);
+    if (missing) return errorJson(missing, 400);
 
     if ((await prisma.asset.count({ where: { userId: user.id } })) >= MAX_ASSETS_PER_MEMBER) {
       return errorJson(`You can register up to ${MAX_ASSETS_PER_MEMBER} assets. Remove one first, or contact the C2 administrator.`, 400);
