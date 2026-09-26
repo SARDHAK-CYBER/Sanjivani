@@ -30,6 +30,9 @@ security watches everything from a command-and-control (C2) dashboard.
                                      ──▶ save 8 recovery codes                     ──▶ signed in
 ```
 
+* **Administrators sign in with three factors every time:** password, a code texted to their registered number, and the
+  authenticator-app code (or a recovery code). The server refuses an admin session unless both the authenticator code and a
+  valid single-use phone proof are presented together.
 * **Why the phone code before setting up the app?** If a stolen password were enough to enrol an authenticator, the
   attacker would enrol their own and two-factor would protect nothing. Enrolment needs the password *and* a code delivered to the account's own phone.
 * **Lost phone / app:** use one of the 8 one-time **recovery codes**. If those are gone too, members can replace the authenticator by

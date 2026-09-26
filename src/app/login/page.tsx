@@ -35,6 +35,8 @@ export default function LoginPage() {
   const [tempToken, setTempToken] = useState(""); // proves the password step passed; only good for the second step
   const [phoneHint, setPhoneHint] = useState("");
   const [canRecoverByPhone, setCanRecoverByPhone] = useState(false);
+  const [adminSecondFactor, setAdminSecondFactor] = useState(false); // admins: texted code first, then the authenticator code
+  const [phoneProof, setPhoneProof] = useState("");
   const [recoveryFlow, setRecoveryFlow] = useState(false); // true when replacing a lost authenticator
   const [otpKey, setOtpKey] = useState(0); // bumping this resets the phone-code widget after a server-side rejection
 
@@ -54,6 +56,7 @@ export default function LoginPage() {
     setPassword("");
     setTempToken("");
     setEnrollToken("");
+    setPhoneProof("");
     setCode("");
     setError(message);
   }, []);
@@ -82,7 +85,10 @@ export default function LoginPage() {
         setCanRecoverByPhone(Boolean(data.canRecoverByPhone));
         setRecoveryFlow(false);
         // Accounts without an authenticator yet must first prove their phone, then set one up.
-        setStep(data.method === "totp" ? "code" : "phone");
+        const adminFlow = data.method === "totp" && Boolean(data.requiresPhone);
+        setAdminSecondFactor(adminFlow);
+        setPhoneProof("");
+        setStep(data.method === "totp" && !adminFlow ? "code" : "phone");
       } else {
         setError(data.error || "Login failed");
       }
@@ -98,9 +104,19 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      const { res, data } = await post({ tempToken, ...(useRecovery ? { recoveryCode: code } : { totpCode: code }) });
+      const { res, data } = await post({
+        tempToken,
+        ...(adminSecondFactor && { phoneProof }),
+        ...(useRecovery ? { recoveryCode: code } : { totpCode: code }),
+      });
       if (res.ok) return goHome(data.role);
       if (res.status === 401 && /session expired/i.test(data.error ?? "")) return backToStart(data.error);
+      if (data.reason === "phone_proof") {
+        // The texted code is single-use and has expired or been spent: ask for a new one.
+        setPhoneProof("");
+        setOtpKey((k) => k + 1);
+        setStep("phone");
+      }
       setError(data.error || "Verification failed");
       setCode("");
     } catch {
@@ -113,6 +129,12 @@ export default function LoginPage() {
   // Phone code entered correctly -> trade the proof for permission to set up (or replace) the authenticator.
   const handlePhoneVerified = async ({ proof }: { proof: string }) => {
     setError("");
+    if (adminSecondFactor) {
+      setPhoneProof(proof);
+      setCode("");
+      setStep("code");
+      return;
+    }
     try {
       const { res, data } = await post({ tempToken, phoneProof: proof });
       if (res.ok) {
@@ -211,7 +233,9 @@ export default function LoginPage() {
           {step === "phone" && (
             <div className="space-y-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {recoveryFlow
+                {adminSecondFactor
+                  ? "Administrator sign-in needs two more steps: confirm the code sent to your registered number, then enter the code from your authenticator app."
+                  : recoveryFlow
                   ? "To replace your authenticator, confirm it is you with a code sent to your registered number. This signs out your other sessions and cancels your old recovery codes."
                   : "To keep your account safe, first confirm your registered number. Then you will set up an authenticator app, which you will use every time you sign in."}
               </p>

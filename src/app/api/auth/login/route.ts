@@ -21,6 +21,7 @@ import { writeAudit } from "@/lib/audit";
  *       totpCode      6-digit code from the authenticator app              -> session
  *       recoveryCode  one-time recovery code (app unavailable)             -> session
  *       phoneProof    proof from /api/phone/verify (a code sent by SMS)    -> enrolment token, NOT a session
+ *       (ADMIN)       totpCode/recoveryCode AND phoneProof together        -> session
  *
  * `method` tells the browser what to ask for: "totp" if the account has an authenticator, "enroll" if it still
  * has to set one up. Setting one up (or replacing a lost one) requires the password AND a code sent to the
@@ -71,6 +72,8 @@ async function verifyPassword(request: Request, body: Record<string, unknown>) {
     requires2FA: true,
     tempToken: await signPendingTwoFactorToken(user),
     method: isTotpEnabled(user) ? "totp" : "enroll",
+    // Administrators need a texted code as well as the authenticator code on every sign-in.
+    requiresPhone: user.role === "ADMIN",
     canRecoverByPhone: user.role !== "ADMIN",
     // Masked, for on-screen display only. The real number is never sent to the browser -- /api/phone/send
     // looks it up itself from tempToken and sends the code server-side.
@@ -90,7 +93,9 @@ async function secondStep(request: Request, body: Record<string, unknown>) {
     return errorJson("Session expired, please login again", 401);
   }
 
-  if (body.phoneProof !== undefined) return phoneStep(request, body, user);
+  // A phoneProof on its own starts/recovers enrolment; alongside a code it is the admin's extra factor (see codeStep).
+  const hasCode = typeof body.totpCode === "string" || typeof body.recoveryCode === "string";
+  if (body.phoneProof !== undefined && !hasCode) return phoneStep(request, body, user);
   if (!isTotpEnabled(user)) {
     return errorJson("Set up your authenticator app first.", 403, { reason: "enroll_required" });
   }
@@ -125,6 +130,10 @@ async function phoneStep(request: Request, body: Record<string, unknown>, user: 
 
 /** Authenticator code or recovery code: completes the sign-in. */
 async function codeStep(request: Request, body: Record<string, unknown>, user: User) {
+  if (user.role === "ADMIN" && typeof body.phoneProof !== "string") {
+    return errorJson("Confirm the code sent to your phone first.", 401, { reason: "phone_proof" });
+  }
+
   // Six digits are guessable, so attempts are capped hard per account, whichever IP they come from.
   if (!(await rateLimit("totpAttemptShort", user.id)).success || !(await rateLimit("totpAttemptDaily", user.id)).success) {
     return tooMany("Too many incorrect codes. Please wait before trying again, or use a recovery code.");
@@ -145,6 +154,22 @@ async function codeStep(request: Request, body: Record<string, unknown>, user: U
   if (!ok) {
     await writeAudit(request, user.id, "LOGIN_2FA_FAILED", `Method: ${via}`);
     return errorJson(via === "totp" ? "That code is incorrect or already used." : "That recovery code is invalid or already used.", 401);
+  }
+
+  if (user.role === "ADMIN") {
+    // Third factor for administrators: a code texted to their own number. Checked after the authenticator code so a
+    // typo there does not burn the (paid, single-use) SMS proof.
+    const phone = parseE164(decryptPIIOrNull(user.contactNumber));
+    if (!phone) return errorJson("This account has no verified phone number.", 403);
+    try {
+      await verifyPhoneProof(body.phoneProof, { purpose: "login", phone, userId: user.id });
+    } catch (error) {
+      if (error instanceof PhoneVerificationError) {
+        await writeAudit(request, user.id, "LOGIN_2FA_FAILED", `Admin phone proof: ${error.reason}`);
+        return errorJson(phoneErrorMessage(error), 401, { reason: "phone_proof" });
+      }
+      throw error;
+    }
   }
 
   const remaining = via === "recovery" ? await recoveryCodesRemaining(user.id) : undefined;
