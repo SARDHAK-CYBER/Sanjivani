@@ -126,6 +126,7 @@ Priority: **M** = must, **S** = should. All items below are implemented in v1.0 
 | FR-6.3 | Incident management: statuses `NEW`, `IN_PROGRESS`, `RESOLVED`, `BLOCKED`, `FLAGGED`; block release of details; owner and reporter phone numbers; evidence photos; map link. | M |
 | FR-6.4 | Member directory with server-side search and pagination; deep profile view (decrypted PII, assets, activity). Each admin view is audited. | M |
 | FR-6.5 | **Audit logs** in two tabs, *Security & account events* and *Incident events*. Profile and asset edits can be expanded to review each field's **before / after** value. A member's activity log can be filtered and exported to CSV from their profile page. | M |
+| FR-6.7 | **Administrator management** (page *Administrators*, primary administrator only): add a new administrator (generated or chosen password) or promote an existing member; edit name, email and phone; reset an admin's password or authenticator; remove administrator access. The primary administrator is the earliest-created admin and cannot be demoted. New admins enrol their own authenticator at first sign-in after a texted code, so no one else sees their secrets. Every change is audited with before/after values. | M |
 | FR-6.6 | Members, assets, audit and dashboard lists refresh automatically (every 5 to 10 s and on tab focus). | S |
 
 ### 3.7 Responsive layout
@@ -230,4 +231,5 @@ Current Chrome, Safari (iOS/macOS), Firefox and Edge; Android and iOS phones; ta
 | 0.1 | Sep 2026 | Prototype: password + SMS login, admin-registered assets, local disk storage |
 | 0.5 | Sep 2026 | Security overhaul: AES-256-GCM PII, hardened uploads, rate limits, audit log |
 | 0.8 | Sep 2026 | TOTP two-factor with recovery codes; self-generated OTP codes |
+| 1.1 | 27 Sep 2026 | Administrators page: primary admin adds, edits, promotes, resets and removes administrators |
 | 1.0 | 27 Sep 2026 | Fast2SMS delivery (no DLT), Vercel Blob storage, Singapore region, member asset management, mobile/laptop photo sets, QR poster download, audit before/after review, live admin alerts, admin SMS only after a password change, responsive layout, Sanjivani branding |

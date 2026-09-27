@@ -18,7 +18,8 @@ security watches everything from a command-and-control (C2) dashboard.
   campus map link, one-tap emergency helpline buttons and first-aid tips. The home address is never released.
 * **Administrators** get a live C2 dashboard: incident feed and counters that refresh on their own, toast + sound + badge alerts
   on every admin page, incident triage and blocking, a member directory with deep profiles and CSV export of a member's activity,
-  and audit logs split into security/account and incident events, with encrypted before/after review of every profile or asset edit.
+  an **Administrators** page where the primary administrator (the first admin created) adds, edits, promotes, resets and removes
+  other administrators, and audit logs split into security/account and incident events, with encrypted before/after review of every profile or asset edit.
 * **Responsive:** one layout for phones, tablets and desktop (Android, iOS, web): 320 px and up, bottom navigation for admins
   on phones, tables that become labelled cards, 16 px inputs (no iOS zoom), notch/home-indicator safe areas, dynamic viewport height.
 

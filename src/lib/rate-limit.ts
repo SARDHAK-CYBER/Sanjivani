@@ -38,6 +38,7 @@ export const LIMITS = {
   otpSendUser: { limit: 6, window: "1 h", ms: 60 * 60_000 },
   otpVerifyIp: { limit: 40, window: "15 m", ms: 15 * 60_000 },
   // Circuit breaker on total sends per day, whoever asks (bounds the worst-case bill). Tune with OTP_DAILY_LIMIT.
+  adminManage: { limit: 40, window: "1 h", ms: 60 * 60_000 },
   otpGlobal: { limit: Number(process.env.OTP_DAILY_LIMIT ?? 2000), window: "1 d", ms: 24 * 60 * 60_000 },
 } as const satisfies Record<string, { limit: number; window: Duration; ms: number }>;
 

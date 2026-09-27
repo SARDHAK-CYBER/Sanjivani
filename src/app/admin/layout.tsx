@@ -1,12 +1,17 @@
 import Link from "next/link";
-import { Users, Car, LayoutDashboard, FileText } from "lucide-react";
+import { Users, Car, LayoutDashboard, FileText, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { AdminAlertsProvider, IncidentsNavLink } from "@/components/AdminAlerts";
 import { AdminMobileNav } from "@/components/AdminMobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LogoutButton } from "@/components/LogoutButton";
+import { getSessionUser } from "@/lib/auth-guard";
+import { getPrimaryAdminId } from "@/lib/primary-admin";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // Only the primary administrator manages other administrators, so only they get the nav entry.
+  const viewer = await getSessionUser();
+  const showAdmins = Boolean(viewer && viewer.role === "ADMIN" && viewer.id === (await getPrimaryAdminId()));
   return (
     <AdminAlertsProvider>
     <div className="min-h-dvh bg-gray-50 dark:bg-gray-950 flex transition-colors">
@@ -35,6 +40,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Audit Logs
           </Link>
           <IncidentsNavLink />
+          {showAdmins && (
+            <Link href="/admin/admins" className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors">
+              <ShieldCheck className="w-5 h-5 mr-3" />
+              Administrators
+            </Link>
+          )}
         </nav>
 
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
@@ -60,7 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </main>
     </div>
-    <AdminMobileNav />
+    <AdminMobileNav showAdmins={showAdmins} />
     </AdminAlertsProvider>
   );
 }

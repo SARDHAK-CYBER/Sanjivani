@@ -49,3 +49,18 @@ describe("password hashing", () => {
     assert.equal(sha256Hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
   });
 });
+
+import { generateTempPassword } from "../src/lib/password";
+
+describe("generated temporary passwords", () => {
+  it("always satisfy the password policy and differ each time", () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 200; i++) {
+      const password = generateTempPassword();
+      assert.equal(password.length, 16);
+      assert.equal(validatePassword(password), null);
+      seen.add(password);
+    }
+    assert.equal(seen.size, 200);
+  });
+});

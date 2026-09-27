@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Car, FileText, LayoutDashboard, ShieldAlert, Users } from "lucide-react";
+import { Car, FileText, LayoutDashboard, ShieldAlert, ShieldCheck, Users } from "lucide-react";
 import { useAdminAlerts } from "@/components/AdminAlerts";
 
 const ITEMS = [
@@ -12,16 +12,18 @@ const ITEMS = [
   { href: "/admin/audits", label: "Audit", Icon: FileText },
   { href: "/admin/incidents", label: "Incidents", Icon: ShieldAlert },
 ];
+const ADMINS_ITEM = { href: "/admin/admins", label: "Admins", Icon: ShieldCheck, exact: false };
 
 /** Bottom tab bar for phones and small tablets: the sidebar is hidden below the md breakpoint. */
-export function AdminMobileNav() {
+export function AdminMobileNav({ showAdmins = false }: { showAdmins?: boolean }) {
   const pathname = usePathname() ?? "";
   const { newIncidents } = useAdminAlerts();
+  const items = showAdmins ? [...ITEMS, ADMINS_ITEM] : ITEMS;
 
   return (
     <nav aria-label="Admin" className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 pb-safe">
-      <ul className="grid grid-cols-5">
-        {ITEMS.map(({ href, label, Icon, exact }) => {
+      <ul className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+        {items.map(({ href, label, Icon, exact }) => {
           const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
           const isIncidents = href === "/admin/incidents";
           return (
