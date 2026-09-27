@@ -1,6 +1,10 @@
 import { blindIndex } from "@/lib/encryption";
 
-export type OtpPurpose = "login" | "register" | "bystander" | "change-phone";
+/**
+ * "password-reset" is deliberately NOT in OTP_PURPOSES: that list is what the public /api/phone/* routes accept, and
+ * password reset has its own routes (src/app/api/auth/reset-password/phone/*) that look the number up from the account.
+ */
+export type OtpPurpose = "login" | "register" | "bystander" | "change-phone" | "password-reset";
 export const OTP_PURPOSES: readonly OtpPurpose[] = ["login", "register", "bystander", "change-phone"];
 
 /** Thrown when the OTP provider is not (correctly) configured. Callers turn it into a 503. */

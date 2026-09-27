@@ -62,7 +62,9 @@ security watches everything from a command-and-control (C2) dashboard.
   **Administrators cannot do that**: a password plus a SIM swap must not be enough to take over an admin. Another operator runs `npm run reset-2fa`.
 * **Authenticator codes** are single-use per 30 s step (a code that was just accepted, or seen over a shoulder, is dead), and attempts are capped at **5 per 15 minutes and 20 per day** per account.
 * Recovery codes are stored only as keyed hashes; each works once. Members can create a fresh set from their dashboard (needs a current app code).
-* Resetting a password by email does **not** bypass two-factor.
+* **Forgot password** works for members and admins without an email server: the login page's link sends a code by SMS to the
+  phone registered on the account and sets the new password in the same step (the email-link method is still offered). The
+  response never says whether an account exists. Either way, resetting a password does **not** bypass two-factor.
 
 ### Phone codes
 

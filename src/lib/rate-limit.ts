@@ -26,6 +26,7 @@ export const LIMITS = {
   incidentBystander: { limit: 5, window: "1 h", ms: 60 * 60_000 },
   resetRequestIp: { limit: 5, window: "1 h", ms: 60 * 60_000 },
   resetRequestEmail: { limit: 3, window: "1 h", ms: 60 * 60_000 },
+  resetSmsEmail: { limit: 5, window: "1 h", ms: 60 * 60_000 },
   resetConfirmIp: { limit: 10, window: "1 h", ms: 60 * 60_000 },
   profileWrite: { limit: 30, window: "1 h", ms: 60 * 60_000 },
   // Authenticator-app codes are 6 digits, so guessing must be capped hard: at most 20 tries a day per account.

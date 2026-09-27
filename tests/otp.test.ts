@@ -219,3 +219,11 @@ describe("Turnstile", () => {
     assert.equal(await verifyCaptcha("good", null), false);
   });
 });
+
+import { OTP_PURPOSES } from "../src/lib/otp/config";
+
+describe("public OTP purposes", () => {
+  it("does not expose password-reset on the generic /api/phone routes", () => {
+    assert.ok(!(OTP_PURPOSES as readonly string[]).includes("password-reset"));
+  });
+});
