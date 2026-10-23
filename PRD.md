@@ -4,7 +4,7 @@
 
 | | |
 | --- | --- |
-| **Version** | 1.0 (production pilot) |
+| **Version** | 1.1 (production pilot) |
 | **Date** | 27 September 2026 |
 | **Owner** | Rashtriya Raksha University (RRU), Gandhinagar |
 | **Status** | Live on Vercel; verified end to end on production (see `PRD_Report.md`) |
@@ -232,5 +232,5 @@ Current Chrome, Safari (iOS/macOS), Firefox and Edge; Android and iOS phones; ta
 | 0.1 | Sep 2026 | Prototype: password + SMS login, admin-registered assets, local disk storage |
 | 0.5 | Sep 2026 | Security overhaul: AES-256-GCM PII, hardened uploads, rate limits, audit log |
 | 0.8 | Sep 2026 | TOTP two-factor with recovery codes; self-generated OTP codes |
-| 1.1 | 27 Sep 2026 | Forgot password by SMS code (works without SMTP); Administrators page: primary admin adds, edits, promotes, resets and removes administrators |
 | 1.0 | 27 Sep 2026 | Fast2SMS delivery (no DLT), Vercel Blob storage, Singapore region, member asset management, mobile/laptop photo sets, QR poster download, audit before/after review, live admin alerts, admin SMS only after a password change, responsive layout, Sanjivani branding |
+| 1.1 | 23 Oct 2026 | **Administrators page** (primary admin adds, edits, promotes, resets and removes administrators); **forgot password by SMS code** for members and admins (works without an email server); **Google Maps** replaces OpenStreetMap for "Find Hospital", "Find Police" and incident locations |

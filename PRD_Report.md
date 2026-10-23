@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Report date** | 27 September 2026 |
-| **Release** | 1.0 (production pilot) |
+| **Release** | 1.1 (production pilot; v1.0 baseline verified below) |
 | **Production** | Vercel, region `sin1`; database Neon (`ap-southeast-1`); files Vercel Blob |
 | **Source** | GitHub `SARDHAK-CYBER/Sanjivani`, branch `main` |
 | **Companion documents** | `PRD.md` (requirements), `README.md` (setup and operations) |
@@ -120,3 +120,13 @@ free-tier cold starts, manual database migrations, and a few paths that have not
 3. Create a second administrator and store recovery codes offline.
 4. Print QR posters for a small group first, scan each one on a different phone and network, then roll out.
 5. Decide the roadmap items in `PRD.md` section 8, starting with owner notification on scan.
+
+## 9. Changes since v1.0 (v1.1, 23 October 2026)
+
+| Change | Notes |
+| --- | --- |
+| Administrators page | Primary admin (earliest-created ADMIN) adds, edits, promotes, resets and removes administrators; every change audited with before/after values |
+| Forgot password by SMS | Code texted to the account's registered phone, new password set in the same step; works for members and admins without SMTP; email link kept as an alternative |
+| Google Maps | "Find Hospital" and "Find Police" on the scan page, and incident locations on the admin dashboard, now open Google Maps (no API key); confirmed deployed on production, not yet tapped on a physical phone |
+| Admin sign-in recovery | An admin locked out by a stale authenticator was restored with `reset-2fa`; login, authenticator reset and password recovery confirmed working by the project owner |
+| Tests | 104 unit tests pass |

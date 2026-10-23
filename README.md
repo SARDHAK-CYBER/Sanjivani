@@ -1,6 +1,6 @@
 # Sanjivani: QR-Based Emergency Response System
 
-**Version 1.0** · see [`PRD.md`](PRD.md) for requirements and [`PRD_Report.md`](PRD_Report.md) for the status and verification report.
+**Version 1.1** · see [`PRD.md`](PRD.md) for requirements and [`PRD_Report.md`](PRD_Report.md) for the status and verification report.
 
 A QR-code emergency response app for a university campus. Members register their identity and emergency
 details (encrypted at rest) and attach QR codes to their assets (vehicle, laptop, phone). If someone finds
