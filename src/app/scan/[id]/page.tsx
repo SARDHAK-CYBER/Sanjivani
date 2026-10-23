@@ -408,8 +408,8 @@ export default function ScanPage({ params }: { params: Promise<{ id: string }> }
                 <div>
                   <h3 className="font-bold text-gray-900 mb-3 flex items-center"><MapPin className="w-5 h-5 mr-2 text-purple-600" /> Nearest Services</h3>
                   <div className="flex gap-2">
-                    <a href={`https://www.openstreetmap.org/search?query=hospital+near+${location.lat},${location.lng}`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-purple-600 text-white text-center py-3 rounded-lg font-bold hover:bg-purple-700 shadow-md">Find Hospital</a>
-                    <a href={`https://www.openstreetmap.org/search?query=police+near+${location.lat},${location.lng}`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-gray-900 text-white text-center py-3 rounded-lg font-bold hover:bg-gray-800 shadow-md">Find Police</a>
+                    <a href={`https://www.google.com/maps/search/hospital/@${location.lat},${location.lng},14z`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-purple-600 text-white text-center py-3 rounded-lg font-bold hover:bg-purple-700 shadow-md">Find Hospital</a>
+                    <a href={`https://www.google.com/maps/search/police+station/@${location.lat},${location.lng},14z`} target="_blank" rel="noopener noreferrer" className="flex-1 bg-gray-900 text-white text-center py-3 rounded-lg font-bold hover:bg-gray-800 shadow-md">Find Police</a>
                   </div>
                 </div>
               )}

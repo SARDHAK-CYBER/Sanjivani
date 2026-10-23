@@ -93,7 +93,7 @@ export default function AdminDashboard() {
                         {inc.scenePhotoUrl3 && <a href={inc.scenePhotoUrl3} target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center">Scene 3 <ExternalLink className="w-3 h-3 ml-1"/></a>}
                         {inc.scenePhotoUrl4 && <a href={inc.scenePhotoUrl4} target="_blank" className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center">Scene 4 <ExternalLink className="w-3 h-3 ml-1"/></a>}
                         {inc.latitude && inc.longitude && (
-                          <a href={`https://www.openstreetmap.org/?mlat=${inc.latitude}&mlon=${inc.longitude}#map=16/${inc.latitude}/${inc.longitude}`} target="_blank" className="text-purple-600 dark:text-purple-400 hover:underline inline-flex items-center mt-1">
+                          <a href={`https://www.google.com/maps/search/?api=1&query=${inc.latitude},${inc.longitude}`} target="_blank" className="text-purple-600 dark:text-purple-400 hover:underline inline-flex items-center mt-1">
                             <MapPin className="w-3 h-3 mr-1" /> GeoID: {inc.latitude.toFixed(4)}, {inc.longitude.toFixed(4)}
                           </a>
                         )}
